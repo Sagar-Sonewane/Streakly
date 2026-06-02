@@ -1,0 +1,6 @@
+{
+  "name": "Streakly",
+  "description": "A professional dark-themed daily streak & discipline tracking app.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
