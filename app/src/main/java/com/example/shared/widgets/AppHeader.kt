@@ -23,6 +23,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,7 +44,8 @@ fun AppHeader(
     currentIndex: Int,
     currentStreak: Int,
     accentColorIndex: Int,
-    onSettingsTap: () -> Unit,
+    notificationsEnabled: Boolean,
+    onNotificationsTap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isDark = AppColors.isDark
@@ -147,7 +150,7 @@ fun AppHeader(
 
             Spacer(modifier = Modifier.width(10.dp))
 
-            // Settings button (Tune Icon)
+            // Notifications Bell Button
             Box(
                 modifier = Modifier
                     .size(42.dp)
@@ -165,16 +168,26 @@ fun AppHeader(
                     .clip(RoundedCornerShape(12.dp))
                     .background(if (isDark) AppColors.bgTertiary else Color.White)
                     .clickable {
-                        onSettingsTap()
+                        onNotificationsTap()
                     },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.Tune,
-                    contentDescription = "Settings Tune Menu",
+                    imageVector = Icons.Rounded.Notifications,
+                    contentDescription = "Notifications Bell",
                     tint = if (isDark) AppColors.textSecondary else Color(0xFF7A7A8C),
                     modifier = Modifier.size(20.dp)
                 )
+
+                if (notificationsEnabled) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 8.dp, end = 8.dp)
+                            .size(7.dp)
+                            .background(accent, CircleShape)
+                    )
+                }
             }
         }
 

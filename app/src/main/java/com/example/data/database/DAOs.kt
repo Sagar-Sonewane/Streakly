@@ -93,3 +93,27 @@ interface SettingsDao {
     @Query("DELETE FROM settings")
     suspend fun deleteSettings()
 }
+
+@Dao
+interface DailyCompletionDao {
+    @Query("SELECT * FROM daily_completions WHERE dateKey = :dateKey")
+    fun getCompletionsForDateFlow(dateKey: String): Flow<List<DailyCompletion>>
+
+    @Query("SELECT * FROM daily_completions WHERE dateKey = :dateKey")
+    suspend fun getCompletionsForDateList(dateKey: String): List<DailyCompletion>
+
+    @Query("SELECT * FROM daily_completions WHERE taskId = :taskId AND dateKey = :dateKey LIMIT 1")
+    suspend fun getCompletionForTaskAndDate(taskId: String, dateKey: String): DailyCompletion?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOrUpdateCompletion(completion: DailyCompletion)
+
+    @Query("DELETE FROM daily_completions WHERE taskId = :taskId")
+    suspend fun deleteCompletionsForTask(taskId: String)
+
+    @Query("DELETE FROM daily_completions WHERE dateKey < :dateKey")
+    suspend fun pruneCompletionsOlderThanDate(dateKey: String)
+
+    @Query("DELETE FROM daily_completions")
+    suspend fun deleteAllCompletions()
+}

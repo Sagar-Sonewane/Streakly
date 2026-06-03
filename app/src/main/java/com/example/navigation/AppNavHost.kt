@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -105,6 +106,7 @@ fun AppNavHost(
     StreaklyTheme(accentColorIndex = accentColorIndex, themeModeIndex = themeModeIndex) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = navBackStackEntry?.destination?.route ?: "splash"
+        var showNotificationSheet by remember { mutableStateOf(false) }
 
         // Render milestone completion overlay if user has unlocked a new milestone
         milestoneToClaim?.let { milestone ->
@@ -113,6 +115,12 @@ fun AppNavHost(
                 language = currentLanguage,
                 onClaimClick = { streakProvider.claimMilestone(milestone) },
                 accentColor = AppColors.accentColorOptions[accentColorIndex]
+            )
+        }
+
+        if (showNotificationSheet) {
+            com.example.ui.screens.NotificationSheet(
+                onDismissRequest = { showNotificationSheet = false }
             )
         }
 
@@ -151,10 +159,9 @@ fun AppNavHost(
                             currentIndex = pagerState.currentPage,
                             currentStreak = streakState.currentStreak,
                             accentColorIndex = accentColorIndex,
-                            onSettingsTap = {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(4)
-                                }
+                            notificationsEnabled = settingsState.notificationsEnabled,
+                            onNotificationsTap = {
+                                showNotificationSheet = true
                             }
                         )
                     },

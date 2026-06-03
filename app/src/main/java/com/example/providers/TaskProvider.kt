@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.StreaklyApp
 import com.example.data.models.TaskModel
 import com.example.data.repositories.TaskRepository
+import com.example.data.repositories.DailyCompletionRepository
 import com.example.core.utils.DateUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,6 +16,7 @@ import java.util.UUID
 
 class TaskProvider(
     private val taskRepository: TaskRepository = StreaklyApp.instance.taskRepository,
+    private val dailyCompletionRepository: DailyCompletionRepository = StreaklyApp.instance.dailyCompletionRepository,
     private val streakProvider: StreakProvider
 ) : ViewModel() {
 
@@ -25,16 +27,41 @@ class TaskProvider(
     val tasksState: StateFlow<List<TaskModel>> = _tasksState.asStateFlow()
 
     init {
-        // Collect all tasks and filter/sort them dynamically based on active date key
         viewModelScope.launch {
             _currentDateKey.collectLatest { dateKey ->
-                taskRepository.getAllTasks().collectLatest { allTasks ->
-                    val sortedFiltered = filterAndSortTasksForDate(allTasks, dateKey)
-                    _tasksState.value = sortedFiltered
-                    // Run a dynamic streak update if tasks reflect today
-                    if (dateKey == DateUtils.getTodayKey()) {
-                        triggerStreakRecalculation(sortedFiltered)
+                val tasksFlow = taskRepository.getAllTasks()
+                val completionsFlow = dailyCompletionRepository.getCompletionsForDateFlow(dateKey)
+                
+                kotlinx.coroutines.flow.combine(tasksFlow, completionsFlow) { allTasks, completions ->
+                    val completedTaskIds = completions.filter { it.isCompleted }.map { it.taskId }.toSet()
+                    val mappedTasks = allTasks.map { task ->
+                        if (task.frequency == "once") {
+                            task
+                        } else {
+                            task.copy(isCompleted = completedTaskIds.contains(task.id))
+                        }
                     }
+                    filterAndSortTasksForDate(mappedTasks, dateKey)
+                }.collectLatest { sortedFiltered ->
+                    _tasksState.value = sortedFiltered
+                    
+                    // Update DayRecord for the active dateKey
+                    val total = sortedFiltered.size
+                    val completed = sortedFiltered.count { it.isCompleted }
+                    val pct = if (total > 0) (completed.toDouble() / total * 100) else 100.0
+                    val record = com.example.data.models.DayRecord(
+                        dateKey = dateKey,
+                        tasksCompleted = completed,
+                        tasksTotal = total,
+                        completionPct = pct
+                    )
+                    StreaklyApp.instance.streakRepository.saveDayRecord(record)
+                    
+                    // Trigger dynamic streak update
+                    val todayTasks = getTasksForDateList(DateUtils.getTodayKey())
+                    val todayTotal = todayTasks.size
+                    val todayCompleted = todayTasks.count { it.isCompleted }
+                    streakProvider.recalculateStreakFromRecords(todayCompleted, todayTotal)
                 }
             }
         }
@@ -49,7 +76,27 @@ class TaskProvider(
 
     suspend fun getTasksForDateList(dateKey: String): List<TaskModel> {
         val allTasks = taskRepository.getAllTasksList()
-        return filterAndSortTasksForDate(allTasks, dateKey)
+        val completions = dailyCompletionRepository.getCompletionsForDateList(dateKey)
+        val completedTaskIds = completions.filter { it.isCompleted }.map { it.taskId }.toSet()
+        val mappedTasks = allTasks.map { task ->
+            if (task.frequency == "once") {
+                task
+            } else {
+                task.copy(isCompleted = completedTaskIds.contains(task.id))
+            }
+        }
+        return filterAndSortTasksForDate(mappedTasks, dateKey)
+    }
+
+    suspend fun isTaskCompletedToday(taskId: String): Boolean {
+        return dailyCompletionRepository.isTaskCompleted(taskId, DateUtils.getTodayKey())
+    }
+
+    suspend fun getCompletionPercentageForDate(dateKey: String): Double {
+        val tasks = getTasksForDateList(dateKey)
+        if (tasks.isEmpty()) return 100.0
+        val completed = tasks.count { it.isCompleted }
+        return (completed.toDouble() / tasks.size) * 100
     }
 
     /**
@@ -103,8 +150,12 @@ class TaskProvider(
 
     fun toggleTaskCompletion(task: TaskModel) {
         viewModelScope.launch {
-            val updatedTask = task.copy(isCompleted = !task.isCompleted)
-            taskRepository.insertTask(updatedTask)
+            if (task.frequency == "once") {
+                val updatedTask = task.copy(isCompleted = !task.isCompleted)
+                taskRepository.insertTask(updatedTask)
+            } else {
+                dailyCompletionRepository.setTaskCompleted(task.id, _currentDateKey.value, !task.isCompleted)
+            }
         }
     }
 
@@ -117,12 +168,14 @@ class TaskProvider(
     fun deleteTask(id: String) {
         viewModelScope.launch {
             taskRepository.deleteTask(id)
+            dailyCompletionRepository.deleteCompletionsForTask(id)
         }
     }
 
     fun deleteAll() {
         viewModelScope.launch {
             taskRepository.deleteAllTasks()
+            dailyCompletionRepository.deleteAll()
             _tasksState.value = emptyList()
             if (_currentDateKey.value == DateUtils.getTodayKey()) {
                 streakProvider.recalculateStreakFromRecords(0, 0)

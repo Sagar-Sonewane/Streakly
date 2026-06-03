@@ -19,6 +19,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.Icon
@@ -43,6 +47,20 @@ import com.example.core.theme.AppColors
 import com.example.core.theme.AppTextStyles
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.window.Dialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.TextButton
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import com.example.providers.Providers
 
 @Composable
 fun SplashScreen(
@@ -54,6 +72,26 @@ fun SplashScreen(
         context.getSharedPreferences("streakly_prefs", Context.MODE_PRIVATE)
     }
     val seenSplash = remember { sharedPrefs.getBoolean("seen_splash", false) }
+    val firstLaunchDone = remember { sharedPrefs.getBoolean("first_launch_done", false) }
+    var showPermissionDialog by remember { mutableStateOf(false) }
+
+    val settingsProvider = Providers.getSettings()
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        val app = StreaklyApp.instance
+        if (isGranted) {
+            settingsProvider.updateNotificationsEnabled(true)
+            settingsProvider.updateReminderTime(21, 0)
+            app.notificationService.scheduleDailyReminder(21, 0)
+        } else {
+            settingsProvider.updateNotificationsEnabled(false)
+        }
+        sharedPrefs.edit().putBoolean("first_launch_done", true).apply()
+        showPermissionDialog = false
+        onNavigateToHome()
+    }
 
     val activeAccent = AppColors.accentColorOptions.getOrNull(accentColorIndex) ?: AppColors.accentOrange
 
@@ -183,7 +221,11 @@ fun SplashScreen(
 
             // Navigate after 1800ms
             delay(1800)
-            onNavigateToHome()
+            if (!firstLaunchDone) {
+                showPermissionDialog = true
+            } else {
+                onNavigateToHome()
+            }
         } else {
             // Subsequent Launch Sequence: Show brand moment for 800ms
             launch {
@@ -196,7 +238,11 @@ fun SplashScreen(
                 )
             }
             delay(800)
-            onNavigateToHome()
+            if (!firstLaunchDone) {
+                showPermissionDialog = true
+            } else {
+                onNavigateToHome()
+            }
         }
     }
 
@@ -299,6 +345,90 @@ fun SplashScreen(
                 ),
                 modifier = Modifier.alpha(versionAlpha.value)
             )
+        }
+    }
+
+    if (showPermissionDialog) {
+        Dialog(onDismissRequest = {}) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = AppColors.bgSecondary),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .border(1.dp, AppColors.border, RoundedCornerShape(24.dp))
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Notifications,
+                        contentDescription = null,
+                        tint = activeAccent,
+                        modifier = Modifier.size(56.dp)
+                    )
+
+                    Text(
+                        text = "Stay on Track!",
+                        style = AppTextStyles.headingMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.textPrimary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        text = "Get daily reminders to complete your tasks, build discipline, and keep your consistency streak alive.",
+                        style = AppTextStyles.bodyMedium,
+                        color = AppColors.textSecondary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                                permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                val app = StreaklyApp.instance
+                                settingsProvider.updateNotificationsEnabled(true)
+                                settingsProvider.updateReminderTime(21, 0)
+                                app.notificationService.scheduleDailyReminder(21, 0)
+                                sharedPrefs.edit().putBoolean("first_launch_done", true).apply()
+                                showPermissionDialog = false
+                                onNavigateToHome()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = activeAccent),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                    ) {
+                        Text(
+                            text = "Allow Notifications",
+                            color = Color.Black,
+                            style = AppTextStyles.actionButton
+                        )
+                    }
+
+                    TextButton(
+                        onClick = {
+                            settingsProvider.updateNotificationsEnabled(false)
+                            sharedPrefs.edit().putBoolean("first_launch_done", true).apply()
+                            showPermissionDialog = false
+                            onNavigateToHome()
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                    ) {
+                        Text(
+                            text = "Maybe Later",
+                            color = AppColors.textSecondary,
+                            style = AppTextStyles.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    }
+                }
+            }
         }
     }
 }

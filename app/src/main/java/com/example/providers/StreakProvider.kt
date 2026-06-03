@@ -16,8 +16,13 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Date
 
+import com.example.data.repositories.TaskRepository
+import com.example.data.repositories.DailyCompletionRepository
+
 class StreakProvider(
-    private val streakRepository: StreakRepository = StreaklyApp.instance.streakRepository
+    private val streakRepository: StreakRepository = StreaklyApp.instance.streakRepository,
+    private val taskRepository: TaskRepository = StreaklyApp.instance.taskRepository,
+    private val dailyCompletionRepository: DailyCompletionRepository = StreaklyApp.instance.dailyCompletionRepository
 ) : ViewModel() {
 
     private val _streakState = MutableStateFlow(StreakModel.default())
@@ -57,7 +62,6 @@ class StreakProvider(
      */
     fun recalculateStreakFromRecords(todayCompleted: Int, todayTotal: Int) {
         viewModelScope.launch {
-            val records = streakRepository.getAllDayRecordsList()
             val todayKey = DateUtils.getTodayKey()
             val yesterdayKey = DateUtils.getYesterdayKey()
 
@@ -75,8 +79,39 @@ class StreakProvider(
             )
             streakRepository.saveDayRecord(todayRecord)
 
-            // Re-fetch all sorted day records chronologically (ascending dateKey)
-            val updatedRecords = streakRepository.getAllDayRecordsList().sortedBy { it.dateKey }
+            // Re-fetch all sorted day records chronologically (ascending dateKey) and update completion pct using daily completion store
+            val allTasks = taskRepository.getAllTasksList()
+            val rawRecords = streakRepository.getAllDayRecordsList()
+            val updatedRecords = rawRecords.map { record ->
+                if (record.dateKey == todayKey) {
+                    todayRecord
+                } else {
+                    val completions = dailyCompletionRepository.getCompletionsForDateList(record.dateKey)
+                    val completedTaskIds = completions.filter { it.isCompleted }.map { it.taskId }.toSet()
+                    
+                    val tasksForDate = TaskProvider.filterAndSortTasksForDate(allTasks, record.dateKey).map { task ->
+                        if (task.frequency == "once") {
+                            task
+                        } else {
+                            task.copy(isCompleted = completedTaskIds.contains(task.id))
+                        }
+                    }
+                    
+                    val total = tasksForDate.size
+                    val completed = tasksForDate.count { it.isCompleted }
+                    val pct = if (total > 0) {
+                        (completed.toDouble() / total * 100)
+                    } else {
+                        100.0
+                    }
+                    
+                    record.copy(
+                        tasksCompleted = completed,
+                        tasksTotal = total,
+                        completionPct = pct
+                    )
+                }
+            }.sortedBy { it.dateKey }
             if (updatedRecords.isEmpty()) return@launch
 
             val firstRecordKey = updatedRecords.first().dateKey

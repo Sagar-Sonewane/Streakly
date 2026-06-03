@@ -38,7 +38,11 @@ object Providers {
         val streakProvider = getStreak()
         return viewModel(
             factory = Factory {
-                TaskProvider(StreaklyApp.instance.taskRepository, streakProvider)
+                TaskProvider(
+                    StreaklyApp.instance.taskRepository,
+                    StreaklyApp.instance.dailyCompletionRepository,
+                    streakProvider
+                )
             }
         )
     }

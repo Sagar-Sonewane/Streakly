@@ -12,9 +12,10 @@ import com.example.data.models.*
         StreakModel::class,
         DayRecord::class,
         ReflectionModel::class,
-        SettingsModel::class
+        SettingsModel::class,
+        DailyCompletion::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -22,6 +23,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun streakDao(): StreakDao
     abstract fun reflectionDao(): ReflectionDao
     abstract fun settingsDao(): SettingsDao
+    abstract fun dailyCompletionDao(): DailyCompletionDao
 
     companion object {
         @Volatile
