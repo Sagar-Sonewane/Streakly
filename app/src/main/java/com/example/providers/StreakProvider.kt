@@ -102,7 +102,7 @@ class StreakProvider(
                     val pct = if (total > 0) {
                         (completed.toDouble() / total * 100)
                     } else {
-                        100.0
+                        0.0
                     }
                     
                     record.copy(

@@ -299,6 +299,45 @@ fun SettingsScreen(
                 }
             }
         }
+
+        // Section: About
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = AppColors.bgSecondary),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 6.dp)
+                    .border(1.dp, AppColors.border, RoundedCornerShape(20.dp))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocalFireDepartment,
+                        contentDescription = "Streak flame icon",
+                        tint = accentColor,
+                        modifier = Modifier.size(36.dp)
+                    )
+                    Text(
+                        text = "Ignited with ❤️ in India 🇮🇳",
+                        style = AppTextStyles.bodyMedium,
+                        color = AppColors.textSecondary,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "by Sagar Sonewane",
+                        style = AppTextStyles.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = AppColors.textPrimary,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
     }
 
     if (showTimePickerDialog) {

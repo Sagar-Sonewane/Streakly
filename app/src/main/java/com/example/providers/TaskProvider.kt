@@ -48,7 +48,11 @@ class TaskProvider(
                     // Update DayRecord for the active dateKey
                     val total = sortedFiltered.size
                     val completed = sortedFiltered.count { it.isCompleted }
-                    val pct = if (total > 0) (completed.toDouble() / total * 100) else 100.0
+                    val pct = if (total > 0) {
+                        (completed.toDouble() / total * 100)
+                    } else {
+                        if (dateKey == DateUtils.getTodayKey()) 100.0 else 0.0
+                    }
                     val record = com.example.data.models.DayRecord(
                         dateKey = dateKey,
                         tasksCompleted = completed,
@@ -57,11 +61,10 @@ class TaskProvider(
                     )
                     StreaklyApp.instance.streakRepository.saveDayRecord(record)
                     
-                    // Trigger dynamic streak update
-                    val todayTasks = getTasksForDateList(DateUtils.getTodayKey())
-                    val todayTotal = todayTasks.size
-                    val todayCompleted = todayTasks.count { it.isCompleted }
-                    streakProvider.recalculateStreakFromRecords(todayCompleted, todayTotal)
+                    // Trigger dynamic streak update only when selected date is today
+                    if (dateKey == DateUtils.getTodayKey()) {
+                        triggerStreakRecalculation(sortedFiltered)
+                    }
                 }
             }
         }

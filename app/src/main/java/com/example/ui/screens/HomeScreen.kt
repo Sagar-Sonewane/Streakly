@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -923,6 +924,7 @@ fun AddTaskDialog(
     var selectedMinute by remember { mutableIntStateOf(0) }
     var isAM by remember { mutableStateOf(true) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showNativeTimePicker by remember { mutableStateOf(false) }
 
     val formattedTime = remember(showTimePicker, selectedHour, selectedMinute, isAM) {
         if (!showTimePicker) null
@@ -1160,97 +1162,34 @@ fun AddTaskDialog(
                                 style = AppTextStyles.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                             )
 
-                            // Wheels custom picker dials row
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
+                            Button(
+                                onClick = {
+                                    com.example.core.utils.SoundService.playTap()
+                                    showNativeTimePicker = true
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = AppColors.bgPrimary),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(0.8.dp, AppColors.border, RoundedCornerShape(10.dp)),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                             ) {
-                                // Hour dial
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    IconButton(
-                                        onClick = {
-                                            com.example.core.utils.SoundService.playTap()
-                                            selectedHour = if (selectedHour == 12) 1 else selectedHour + 1
-                                        },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Hour Up", tint = AppColors.textPrimary)
-                                    }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Text(
-                                        text = selectedHour.toString().padStart(2, '0'),
-                                        style = AppTextStyles.headingMedium.copy(fontSize = 24.sp, fontWeight = FontWeight.Bold),
-                                        color = accentColor
+                                        text = getLabel("Select Custom Time", "कस्टम समय चुनें", "सानुकूल वेळ निवडा"),
+                                        color = AppColors.textPrimary,
+                                        style = AppTextStyles.bodyMedium
                                     )
-                                    IconButton(
-                                        onClick = {
-                                            com.example.core.utils.SoundService.playTap()
-                                            selectedHour = if (selectedHour == 1) 12 else selectedHour - 1
-                                        },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Hour Down", tint = AppColors.textPrimary)
-                                    }
-                                }
-
-                                Text(
-                                    text = ":",
-                                    style = AppTextStyles.headingMedium.copy(fontSize = 24.sp, fontWeight = FontWeight.ExtraBold),
-                                    color = accentColor,
-                                    modifier = Modifier.padding(horizontal = 14.dp)
-                                )
-
-                                // Minute Dial (step of 5)
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    IconButton(
-                                        onClick = {
-                                            com.example.core.utils.SoundService.playTap()
-                                            selectedMinute = if (selectedMinute == 55) 0 else selectedMinute + 5
-                                        },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Minute Up", tint = AppColors.textPrimary)
-                                    }
-                                    Text(
-                                        text = selectedMinute.toString().padStart(2, '0'),
-                                        style = AppTextStyles.headingMedium.copy(fontSize = 24.sp, fontWeight = FontWeight.Bold),
-                                        color = accentColor
+                                    Icon(
+                                        imageVector = Icons.Default.AccessTime,
+                                        contentDescription = null,
+                                        tint = accentColor,
+                                        modifier = Modifier.size(18.dp)
                                     )
-                                    IconButton(
-                                        onClick = {
-                                            com.example.core.utils.SoundService.playTap()
-                                            selectedMinute = if (selectedMinute == 0) 55 else selectedMinute - 5
-                                        },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Minute Down", tint = AppColors.textPrimary)
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.width(20.dp))
-
-                                // AM/PM picker dials
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    listOf("AM", "PM").forEach { label ->
-                                        val isSelected = (isAM && label == "AM") || (!isAM && label == "PM")
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(if (isSelected) accentColor else AppColors.bgPrimary)
-                                                .clickable {
-                                                    com.example.core.utils.SoundService.playTap()
-                                                    isAM = label == "AM"
-                                                }
-                                                .padding(horizontal = 14.dp, vertical = 6.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = label,
-                                                style = AppTextStyles.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
-                                                color = if (isSelected) Color.Black else AppColors.textHint
-                                            )
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -1539,6 +1478,23 @@ fun AddTaskDialog(
             }
         }
     }
+
+    if (showNativeTimePicker) {
+        Material3TimePickerDialog(
+            initialHour = selectedHour,
+            initialMinute = selectedMinute,
+            initialIsAM = isAM,
+            accentColor = accentColor,
+            getLabel = getLabel,
+            onDismiss = { showNativeTimePicker = false },
+            onConfirm = { hour, minute, am ->
+                selectedHour = hour
+                selectedMinute = minute
+                isAM = am
+                showNativeTimePicker = false
+            }
+        )
+    }
 }
 
 @Composable
@@ -1585,6 +1541,7 @@ fun EditTaskDialog(
     var selectedMinute by remember { mutableIntStateOf(initVals.second) }
     var isAM by remember { mutableStateOf(initVals.third.first) }
     var showTimePicker by remember { mutableStateOf(initVals.third.second) }
+    var showNativeTimePicker by remember { mutableStateOf(false) }
 
     val formattedTime = remember(showTimePicker, selectedHour, selectedMinute, isAM) {
         if (!showTimePicker) null
@@ -1821,94 +1778,34 @@ fun EditTaskDialog(
                                 style = AppTextStyles.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                             )
 
-                            // Wheels custom pick dials
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
+                            Button(
+                                onClick = {
+                                    com.example.core.utils.SoundService.playTap()
+                                    showNativeTimePicker = true
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = AppColors.bgPrimary),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .border(0.8.dp, AppColors.border, RoundedCornerShape(10.dp)),
+                                shape = RoundedCornerShape(10.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                             ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    IconButton(
-                                        onClick = {
-                                            com.example.core.utils.SoundService.playTap()
-                                            selectedHour = if (selectedHour == 12) 1 else selectedHour + 1
-                                        },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Hour Up", tint = AppColors.textPrimary)
-                                    }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Text(
-                                        text = selectedHour.toString().padStart(2, '0'),
-                                        style = AppTextStyles.headingMedium.copy(fontSize = 24.sp, fontWeight = FontWeight.Bold),
-                                        color = accentColor
+                                        text = getLabel("Select Custom Time", "कस्टम समय चुनें", "सानुकूल वेळ निवडा"),
+                                        color = AppColors.textPrimary,
+                                        style = AppTextStyles.bodyMedium
                                     )
-                                    IconButton(
-                                        onClick = {
-                                            com.example.core.utils.SoundService.playTap()
-                                            selectedHour = if (selectedHour == 1) 12 else selectedHour - 1
-                                        },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Hour Down", tint = AppColors.textPrimary)
-                                    }
-                                }
-
-                                Text(
-                                    text = ":",
-                                    style = AppTextStyles.headingMedium.copy(fontSize = 24.sp, fontWeight = FontWeight.ExtraBold),
-                                    color = accentColor,
-                                    modifier = Modifier.padding(horizontal = 14.dp)
-                                )
-
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    IconButton(
-                                        onClick = {
-                                            com.example.core.utils.SoundService.playTap()
-                                            selectedMinute = if (selectedMinute == 55) 0 else selectedMinute + 5
-                                        },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(Icons.Default.KeyboardArrowUp, contentDescription = "Minute Up", tint = AppColors.textPrimary)
-                                    }
-                                    Text(
-                                        text = selectedMinute.toString().padStart(2, '0'),
-                                        style = AppTextStyles.headingMedium.copy(fontSize = 24.sp, fontWeight = FontWeight.Bold),
-                                        color = accentColor
+                                    Icon(
+                                        imageVector = Icons.Default.AccessTime,
+                                        contentDescription = null,
+                                        tint = accentColor,
+                                        modifier = Modifier.size(18.dp)
                                     )
-                                    IconButton(
-                                        onClick = {
-                                            com.example.core.utils.SoundService.playTap()
-                                            selectedMinute = if (selectedMinute == 0) 55 else selectedMinute - 5
-                                        },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = "Minute Down", tint = AppColors.textPrimary)
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.width(20.dp))
-
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    listOf("AM", "PM").forEach { label ->
-                                        val isSelected = (isAM && label == "AM") || (!isAM && label == "PM")
-                                        Box(
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(8.dp))
-                                                .background(if (isSelected) accentColor else AppColors.bgPrimary)
-                                                .clickable {
-                                                    com.example.core.utils.SoundService.playTap()
-                                                    isAM = label == "AM"
-                                                }
-                                                .padding(horizontal = 14.dp, vertical = 6.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = label,
-                                                style = AppTextStyles.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
-                                                color = if (isSelected) Color.Black else AppColors.textHint
-                                            )
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -2196,6 +2093,23 @@ fun EditTaskDialog(
             }
         }
     }
+
+    if (showNativeTimePicker) {
+        Material3TimePickerDialog(
+            initialHour = selectedHour,
+            initialMinute = selectedMinute,
+            initialIsAM = isAM,
+            accentColor = accentColor,
+            getLabel = getLabel,
+            onDismiss = { showNativeTimePicker = false },
+            onConfirm = { hour, minute, am ->
+                selectedHour = hour
+                selectedMinute = minute
+                isAM = am
+                showNativeTimePicker = false
+            }
+        )
+    }
 }
 
 @Composable
@@ -2209,5 +2123,79 @@ fun SectionLabel(text: String) {
         ),
         color = AppColors.textHint,
         modifier = Modifier.padding(top = 10.dp)
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun Material3TimePickerDialog(
+    initialHour: Int,
+    initialMinute: Int,
+    initialIsAM: Boolean,
+    accentColor: Color,
+    getLabel: (String, String, String) -> String,
+    onDismiss: () -> Unit,
+    onConfirm: (Int, Int, Boolean) -> Unit
+) {
+    val initialHour24 = if (initialIsAM) {
+        if (initialHour == 12) 0 else initialHour
+    } else {
+        if (initialHour == 12) 12 else initialHour + 12
+    }
+    val state = rememberTimePickerState(
+        initialHour = initialHour24,
+        initialMinute = initialMinute,
+        is24Hour = false
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val isAMResult = state.hour < 12
+                    val hour12Result = when {
+                        state.hour == 0 -> 12
+                        state.hour == 12 -> 12
+                        state.hour > 12 -> state.hour - 12
+                        else -> state.hour
+                    }
+                    onConfirm(hour12Result, state.minute, isAMResult)
+                }
+            ) {
+                Text(getLabel("Confirm", "पुष्टि करें", "निश्चित करा"), color = accentColor, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(getLabel("Cancel", "रद्द करें", "रद्द करा"), color = AppColors.textSecondary)
+            }
+        },
+        text = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                TimePicker(
+                    state = state,
+                    colors = TimePickerDefaults.colors(
+                        clockDialSelectedContentColor = Color.Black,
+                        clockDialUnselectedContentColor = AppColors.textPrimary,
+                        selectorColor = accentColor,
+                        periodSelectorSelectedContainerColor = accentColor.copy(alpha = 0.2f),
+                        periodSelectorUnselectedContainerColor = AppColors.bgTertiary,
+                        periodSelectorSelectedContentColor = accentColor,
+                        periodSelectorUnselectedContentColor = AppColors.textSecondary,
+                        timeSelectorSelectedContainerColor = accentColor.copy(alpha = 0.2f),
+                        timeSelectorUnselectedContainerColor = AppColors.bgTertiary,
+                        timeSelectorSelectedContentColor = accentColor,
+                        timeSelectorUnselectedContentColor = AppColors.textPrimary
+                    )
+                )
+            }
+        },
+        containerColor = AppColors.bgSecondary,
+        shape = RoundedCornerShape(28.dp),
+        modifier = Modifier.border(1.dp, AppColors.border, RoundedCornerShape(28.dp))
     )
 }
