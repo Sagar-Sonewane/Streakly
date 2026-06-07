@@ -51,7 +51,7 @@ class TaskProvider(
                     val pct = if (total > 0) {
                         (completed.toDouble() / total * 100)
                     } else {
-                        if (dateKey == DateUtils.getTodayKey()) 100.0 else 0.0
+                        0.0
                     }
                     val record = com.example.data.models.DayRecord(
                         dateKey = dateKey,
@@ -97,7 +97,7 @@ class TaskProvider(
 
     suspend fun getCompletionPercentageForDate(dateKey: String): Double {
         val tasks = getTasksForDateList(dateKey)
-        if (tasks.isEmpty()) return 100.0
+        if (tasks.isEmpty()) return 0.0
         val completed = tasks.count { it.isCompleted }
         return (completed.toDouble() / tasks.size) * 100
     }

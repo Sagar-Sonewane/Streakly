@@ -34,6 +34,10 @@ class GreetingScreenshotTest {
 
   @Test
   fun testAppNavHostRendersWithoutCrash() {
+    val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+    val sharedPrefs = context.getSharedPreferences("streakly_prefs", android.content.Context.MODE_PRIVATE)
+    sharedPrefs.edit().putString("user_name", "Test User").commit()
+
     composeTestRule.setContent {
       AppNavHost()
     }

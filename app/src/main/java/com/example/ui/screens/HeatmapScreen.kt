@@ -129,7 +129,11 @@ fun HeatmapScreen(
             )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = { adjustMonth(-1) }) {
+                IconButton(onClick = {
+                    com.example.core.utils.SoundService.playTap()
+                    com.example.core.utils.HapticService.selectionClick()
+                    adjustMonth(-1)
+                }) {
                     Icon(imageVector = Icons.Default.ChevronLeft, contentDescription = "Previous Month", tint = AppColors.textPrimary)
                 }
 
@@ -141,7 +145,11 @@ fun HeatmapScreen(
                     textAlign = TextAlign.Center
                 )
 
-                IconButton(onClick = { adjustMonth(1) }) {
+                IconButton(onClick = {
+                    com.example.core.utils.SoundService.playTap()
+                    com.example.core.utils.HapticService.selectionClick()
+                    adjustMonth(1)
+                }) {
                     Icon(imageVector = Icons.Default.ChevronRight, contentDescription = "Next Month", tint = AppColors.textPrimary)
                 }
             }
@@ -224,6 +232,8 @@ fun HeatmapScreen(
                                             shape = RoundedCornerShape(8.dp)
                                         )
                                         .clickable {
+                                            com.example.core.utils.SoundService.playTap()
+                                            com.example.core.utils.HapticService.selectionClick()
                                             selectedDateKey = key
                                             // Make date active in master tasks view as well
                                             taskProvider.setDateKey(key)

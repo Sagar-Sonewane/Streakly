@@ -26,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -48,6 +49,7 @@ import com.example.data.models.TaskModel
 import com.example.providers.Providers
 import com.example.shared.widgets.SectionHeader
 import com.example.shared.widgets.StreakFab
+import com.example.shared.widgets.TimePickerSheet
 import java.util.*
 
 @Composable
@@ -66,6 +68,7 @@ fun HomeScreen(
 
     val language = settingsState.language
     val accentColor = AppColors.accentColorOptions[settingsState.accentColorIndex]
+    val isPastDate = currentDateKey < DateUtils.getTodayKey()
 
     var showAddTaskDialog by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<TaskModel?>(null) }
@@ -84,14 +87,16 @@ fun HomeScreen(
         containerColor = AppColors.bgPrimary,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
-            StreakFab(
-                onClick = {
-                    com.example.core.utils.SoundService.playTap()
-                    com.example.core.utils.HapticService.selectionClick()
-                    showAddTaskDialog = true
-                },
-                accentColor = accentColor
-            )
+            if (!isPastDate) {
+                StreakFab(
+                    onClick = {
+                        com.example.core.utils.SoundService.playTap()
+                        com.example.core.utils.HapticService.selectionClick()
+                        showAddTaskDialog = true
+                    },
+                    accentColor = accentColor
+                )
+            }
         }
     ) { paddingValues ->
         LazyColumn(
@@ -121,6 +126,30 @@ fun HomeScreen(
                     language = language,
                     accentColor = accentColor
                 )
+            }
+            if (isPastDate) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Locked",
+                            tint = AppColors.textHint,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = getLabel("Past day — view only", "पिछला दिन — केवल देखने के लिए", "मागील दिवस — फक्त पाहण्याकरिता"),
+                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Medium),
+                            color = AppColors.textHint
+                        )
+                    }
+                }
             }
             item {
                 val completedCount = tasksState.count { it.isCompleted }
@@ -181,14 +210,15 @@ fun HomeScreen(
                 items(tasksState, key = { it.id }) { task ->
                     TaskItemRow(
                         task = task,
+                        isLocked = isPastDate,
                         onToggleCompletion = {
                             taskProvider.toggleTaskCompletion(task)
                             if (!task.isCompleted) {
-                                com.example.core.utils.SoundService.playTaskDone()
-                                com.example.core.utils.HapticService.heavyImpact()
+                                com.example.core.utils.SoundService.playSuccess()
+                                com.example.core.utils.HapticService.confirm()
                             } else {
-                                com.example.core.utils.SoundService.playTap()
-                                com.example.core.utils.HapticService.lightImpact()
+                                com.example.core.utils.SoundService.playDelete()
+                                com.example.core.utils.HapticService.doubleClick()
                             }
                         },
                         onEdit = {
@@ -197,8 +227,8 @@ fun HomeScreen(
                             editingTask = task
                         },
                         onDelete = {
-                            com.example.core.utils.SoundService.playDismiss()
-                            com.example.core.utils.HapticService.mediumImpact()
+                            com.example.core.utils.SoundService.playDelete()
+                            com.example.core.utils.HapticService.doubleClick()
                             taskProvider.deleteTask(task.id)
                         }
                     )
@@ -276,8 +306,6 @@ fun QuoteHeader(language: String, accentColor: Color) {
                 timeLeftMs = (timeLeftMs - tickRate.toInt()).coerceAtLeast(0)
             }
             isDismissingAnimation = true
-            com.example.core.utils.SoundService.playDismiss()
-            com.example.core.utils.HapticService.mediumImpact()
             kotlinx.coroutines.delay(300)
             sharedPrefs.edit().putBoolean(prefKey, true).apply()
             isDismissedInPrefs = true
@@ -298,13 +326,8 @@ fun QuoteHeader(language: String, accentColor: Color) {
                 .border(1.dp, AppColors.border, RoundedCornerShape(20.dp))
                 .clickable {
                     isPaused = !isPaused
-                    if (isPaused) {
-                        com.example.core.utils.SoundService.playTap()
-                        com.example.core.utils.HapticService.mediumImpact()
-                    } else {
-                        com.example.core.utils.SoundService.playTap()
-                        com.example.core.utils.HapticService.lightImpact()
-                    }
+                    com.example.core.utils.SoundService.playToggle()
+                    com.example.core.utils.HapticService.selectionClick()
                 }
         ) {
             Column(
@@ -319,7 +342,7 @@ fun QuoteHeader(language: String, accentColor: Color) {
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "STREAKLY • 今日の言葉",
+                            text = "STREAKLY • DAILY MOTIVATION",
                             style = AppTextStyles.caption.copy(
                                 fontWeight = FontWeight.Black,
                                 color = accentColor,
@@ -342,9 +365,9 @@ fun QuoteHeader(language: String, accentColor: Color) {
                     
                     IconButton(
                         onClick = {
+                            com.example.core.utils.SoundService.playTap()
+                            com.example.core.utils.HapticService.selectionClick()
                             isDismissingAnimation = true
-                            com.example.core.utils.SoundService.playDismiss()
-                            com.example.core.utils.HapticService.mediumImpact()
                             scope.launch {
                                 kotlinx.coroutines.delay(300)
                                 sharedPrefs.edit().putBoolean(prefKey, true).apply()
@@ -426,78 +449,117 @@ fun StreakFlameCard(
     getLabel: (String, String, String) -> String
 ) {
     val isDark = AppColors.isDark
-    val textHintColor = AppColors.textHint
-    val textSecColor = AppColors.textSecondary
-
-    val labelText = getLabel("CURRENT STREAK", "सक्रिय स्ट्रीक", "चालू स्ट्रीक")
-    val daysLabel = getLabel("Days", " दिन", " दिवस")
     val bestLabel = getLabel("Best: $longestStreak days", "सर्वोच्च: $longestStreak दिन", "सर्वोत्तम: $longestStreak दिवस")
 
-    com.example.shared.widgets.StreaklyCard(
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
-        padding = 18.dp
+            .padding(horizontal = 20.dp)
+            .shadow(
+                elevation = if (isDark) 0.dp else 10.dp,
+                shape = RoundedCornerShape(24.dp),
+                ambientColor = accentColor.copy(alpha = 0.25f),
+                spotColor = accentColor.copy(alpha = 0.25f)
+            )
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        accentColor,
+                        accentColor.copy(alpha = 0.85f)
+                    )
+                ),
+                shape = RoundedCornerShape(24.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = Color.White.copy(alpha = 0.15f),
+                shape = RoundedCornerShape(24.dp)
+            )
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(22.dp)
         ) {
+            // Left: Large bold graphic container with Flame Icon (Avatar style)
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.LocalFireDepartment,
+                    contentDescription = "Flame Icon",
+                    tint = Color.White,
+                    modifier = Modifier.size(34.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(18.dp))
+
+            // Middle: Information column
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = labelText,
-                    style = AppTextStyles.hint(textHintColor).copy(
-                        letterSpacing = 1.5.sp,
-                        fontWeight = FontWeight.W600
-                    )
-                )
-                
-                Spacer(modifier = Modifier.height(6.dp))
-                
-                Row(
-                    verticalAlignment = Alignment.Bottom
+                // Top Tag Chip
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50.dp))
+                        .background(Color.White.copy(alpha = 0.25f))
+                        .padding(horizontal = 10.dp, vertical = 3.dp)
                 ) {
                     Text(
-                        text = "$currentStreak",
-                        style = AppTextStyles.statNumber(accentColor)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = daysLabel,
-                        style = AppTextStyles.sectionHeader(textSecColor),
-                        modifier = Modifier.padding(bottom = 6.dp)
+                        text = getLabel("ACTIVE STREAK", "सक्रिय निरंतरता", "सक्रिय सातत्य"),
+                        style = AppTextStyles.caption.copy(
+                            color = Color.White,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 9.sp,
+                            letterSpacing = 1.2.sp
+                        )
                     )
                 }
-                
-                Spacer(modifier = Modifier.height(4.dp))
-                
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Big main number and label
+                Text(
+                    text = "$currentStreak " + getLabel("Days", "दिन", "दिवस"),
+                    style = AppTextStyles.headingLarge.copy(
+                        color = Color.White,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 28.sp,
+                        letterSpacing = (-0.5).sp
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Trophy subtext
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Default.EmojiEvents,
-                        contentDescription = "Best streak trophy icon",
+                        contentDescription = "Trophy icon",
                         tint = AppColors.warning,
                         modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = bestLabel,
-                        style = AppTextStyles.label(textSecColor)
+                        style = AppTextStyles.bodySmall.copy(
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontWeight = FontWeight.Bold
+                        )
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            com.example.shared.widgets.IconBadge(
-                icon = Icons.Default.LocalFireDepartment,
-                color = accentColor,
-                size = 56.dp
-            )
         }
     }
 }
@@ -530,7 +592,8 @@ fun WeekCalendarBar(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp),
-        padding = 16.dp
+        padding = 16.dp,
+        borderRadius = 24.dp
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -546,11 +609,11 @@ fun WeekCalendarBar(
                         "mr" -> "साप्ताहिक वेळापत्रक"
                         else -> "Weekly Tracker"
                     },
-                    style = AppTextStyles.sectionHeader(textPriColor)
+                    style = AppTextStyles.sectionHeader(textPriColor).copy(fontWeight = FontWeight.Black)
                 )
                 Text(
                     text = DateUtils.getFormattedDate(currentDateKey, language),
-                    style = AppTextStyles.label(accentColor)
+                    style = AppTextStyles.label(accentColor).copy(fontWeight = FontWeight.Bold)
                 )
             }
 
@@ -558,7 +621,7 @@ fun WeekCalendarBar(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 dateKeys.forEach { key ->
                     val isTodaySelected = key == currentDateKey
@@ -568,53 +631,56 @@ fun WeekCalendarBar(
                     val record = dayRecords.find { it.dateKey == key }
                     val isDone = record?.let { it.tasksCompleted > 0 && it.tasksCompleted >= it.tasksTotal } ?: false
 
+                    val activeBg = if (isDark) accentColor else Color(0xFF0F1320)
+                    val inactiveBg = if (isDark) AppColors.bgTertiary else Color(0xFFF8F9FB)
+                    val itemBg = if (isTodaySelected) activeBg else inactiveBg
+                    val itemTextColor = if (isTodaySelected) Color.White else textPriColor
+
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .clickable { onDateSelected(key) },
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(itemBg)
+                            .then(
+                                if (!isTodaySelected) {
+                                    Modifier.border(
+                                        width = 1.dp,
+                                        color = if (isDone) accentColor.copy(alpha = 0.4f) else AppColors.border,
+                                        shape = RoundedCornerShape(20.dp)
+                                    )
+                                } else Modifier
+                            )
+                            .clickable { onDateSelected(key) }
+                            .padding(vertical = 10.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Text(
-                            text = dayLabel,
-                            style = AppTextStyles.hint(if (isTodaySelected) accentColor else textHintColor)
-                        )
-
+                        // Dot at top of pill
                         Box(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(5.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    if (isTodaySelected) accentColor
-                                    else if (isDone) accentColor.copy(alpha = 0.15f)
-                                    else if (isDark) AppColors.bgTertiary
-                                    else Color(0xFFEEEEF5)
+                                    if (isTodaySelected) Color.White
+                                    else if (isDone) accentColor
+                                    else Color.Transparent
                                 )
-                                .border(
-                                    width = 1.dp,
-                                    color = if (isTodaySelected) Color.Transparent
-                                            else if (isDone) accentColor.copy(alpha = 0.4f)
-                                            else AppColors.border,
-                                    shape = CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (isDone && !isTodaySelected) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = "Completed checkmark icon",
-                                    tint = accentColor,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            } else {
-                                Text(
-                                    text = dayNum,
-                                    style = AppTextStyles.label(
-                                        if (isTodaySelected) Color.White else textSecColor
-                                    )
-                                )
-                            }
-                        }
+                        )
+
+                        Text(
+                            text = dayLabel,
+                            style = AppTextStyles.hint(
+                                if (isTodaySelected) Color.White.copy(alpha = 0.8f) else textSecColor
+                            ).copy(fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                        )
+
+                        Text(
+                            text = dayNum,
+                            style = AppTextStyles.label(itemTextColor).copy(
+                                fontWeight = FontWeight.Black,
+                                fontSize = 14.sp
+                            )
+                        )
                     }
                 }
             }
@@ -630,69 +696,165 @@ fun ProgressSummarySection(
     getLabel: (String, String, String) -> String
 ) {
     val isDark = AppColors.isDark
-    val textHintColor = AppColors.textHint
-    val completionPct = if (total > 0) completed.toDouble() / total else 1.0
-    val formattedPct = (completionPct * 100).toInt()
-
+    
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
     ) {
+        Text(
+            text = getLabel("DAILY PROGRESS SUMMARY", "दैनिक प्रगति विवरण", "दैनिक प्रगती अहवाल"),
+            style = AppTextStyles.hint(AppColors.textHint).copy(
+                letterSpacing = 1.5.sp,
+                fontWeight = FontWeight.W800
+            ),
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = getLabel("COMPLETION METRIC", "पूर्णता दर", "पूर्णता प्रमाण"),
-                style = AppTextStyles.hint(textHintColor).copy(
-                    letterSpacing = 1.5.sp,
-                    fontWeight = FontWeight.W600
-                )
-            )
-            Text(
-                text = "$completed/$total ($formattedPct%)",
-                style = AppTextStyles.label(accentColor).copy(
-                    fontWeight = FontWeight.W700
-                )
-            )
+            // Chip 1: Total Habits
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(50.dp))
+                    .background(AppColors.bgSecondary)
+                    .border(1.dp, AppColors.border, RoundedCornerShape(50.dp))
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.List,
+                        contentDescription = "Total",
+                        tint = AppColors.textSecondary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = getLabel("Total: $total", "कुल: $total", "एकूण: $total"),
+                        style = AppTextStyles.caption.copy(
+                            color = AppColors.textPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
+
+            // Chip 2: Completed
+            val successColor = AppColors.success
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(50.dp))
+                    .background(successColor.copy(alpha = 0.12f))
+                    .border(1.dp, successColor.copy(alpha = 0.35f), RoundedCornerShape(50.dp))
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Completed",
+                        tint = successColor,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = getLabel("Done: $completed", "पूर्ण: $completed", "पूर्ण: $completed"),
+                        style = AppTextStyles.caption.copy(
+                            color = if (isDark) successColor else AppColors.getLegibleColor(successColor),
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
+
+            // Chip 3: Pending
+            val pendingCount = (total - completed).coerceAtLeast(0)
+            val pendingColor = AppColors.warning
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(50.dp))
+                    .background(pendingColor.copy(alpha = 0.12f))
+                    .border(1.dp, pendingColor.copy(alpha = 0.35f), RoundedCornerShape(50.dp))
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = "Remaining",
+                        tint = pendingColor,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = getLabel("Left: $pendingCount", "शेष: $pendingCount", "उर्वरित: $pendingCount"),
+                        style = AppTextStyles.caption.copy(
+                            color = if (isDark) pendingColor else AppColors.getLegibleColor(pendingColor),
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
         }
-        
-        Spacer(modifier = Modifier.height(8.dp))
-        
-        LinearProgressIndicator(
-            progress = completionPct.toFloat(),
-            color = accentColor,
-            trackColor = if (isDark) AppColors.bgTertiary else Color(0xFFE2E2EE),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(8.dp)
-                .clip(RoundedCornerShape(6.dp))
-        )
     }
 }
 
 @Composable
 fun TaskItemRow(
     task: TaskModel,
+    isLocked: Boolean = false,
     onToggleCompletion: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val chosenColor = AppColors.accentColorOptions.getOrNull(task.colorIndex) ?: AppColors.accentOrange
+    val isDark = AppColors.isDark
+    // Category color mapping
+    val taskColor = AppColors.taskCategoryColors.getOrNull(task.colorIndex) ?: AppColors.accentOrange
     val importanceColor = AppColors.getImportanceColor(task.importance)
 
+    // Soft colored container background in light mode, dark card with colored left border in dark mode
+    val cardBg = if (isDark) {
+        AppColors.bgSecondary.copy(alpha = 0.9f)
+    } else {
+        taskColor.copy(alpha = 0.12f)
+    }
+
     Card(
-        colors = CardDefaults.cardColors(containerColor = AppColors.bgSecondary),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
         shape = RoundedCornerShape(20.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
-            .border(
-                width = if (task.isCompleted) 1.5.dp else 1.dp,
-                color = if (task.isCompleted) AppColors.success.copy(alpha = 0.8f) else AppColors.border,
-                shape = RoundedCornerShape(20.dp)
+            .then(
+                if (isDark) {
+                    Modifier.border(
+                        width = 1.dp,
+                        color = if (task.isCompleted) AppColors.success.copy(alpha = 0.5f) else AppColors.border,
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                } else {
+                    Modifier.border(
+                        width = 1.dp,
+                        color = if (task.isCompleted) AppColors.success.copy(alpha = 0.4f) else taskColor.copy(alpha = 0.25f),
+                        shape = RoundedCornerShape(20.dp)
+                    )
+                }
             )
             .testTag("task_item_card_${task.id}")
     ) {
@@ -700,26 +862,26 @@ fun TaskItemRow(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Priority thick accent indicator on the far left side
-            if (task.importance == "priority") {
+            // Draw a thick left border color block if in dark mode or if it's high priority
+            if (isDark || task.importance == "priority") {
                 Box(
                     modifier = Modifier
-                        .width(4.dp)
-                        .height(68.dp)
-                        .background(importanceColor, RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp))
+                        .width(5.dp)
+                        .height(76.dp)
+                        .background(
+                            if (task.importance == "priority") importanceColor else taskColor,
+                            RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)
+                        )
                 )
             }
 
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(
-                        horizontal = 16.dp,
-                        vertical = Responsive.sp(12f)
-                    )
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
                     .graphicsLayer {
-                        // Strike-through + reduced opacity when done
-                        alpha = if (task.isCompleted) 0.55f else 1.0f
+                        // Soft fade when completed
+                        alpha = if (task.isCompleted) 0.65f else 1.0f
                     },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -733,14 +895,15 @@ fun TaskItemRow(
                     Box(
                         modifier = Modifier
                             .size(Responsive.sp(26f))
+                            .graphicsLayer { alpha = if (isLocked) 0.5f else 1f }
                             .clip(CircleShape)
                             .background(if (task.isCompleted) AppColors.success else Color.Transparent)
                             .border(
-                                width = 1.8.dp,
-                                color = if (task.isCompleted) AppColors.success else importanceColor,
+                                width = 2.dp,
+                                color = if (task.isCompleted) AppColors.success else (if (isDark) taskColor else AppColors.getLegibleColor(taskColor)),
                                 shape = CircleShape
                             )
-                            .clickable { onToggleCompletion() }
+                            .clickable(enabled = !isLocked) { onToggleCompletion() }
                             .testTag("task_toggle_check_${task.id}"),
                         contentAlignment = Alignment.Center
                     ) {
@@ -754,34 +917,26 @@ fun TaskItemRow(
                         }
                     }
 
-                    // Title + Description Metadata
+                    // Title + Subtitles
                     Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            // Category color dot matches importance
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .background(importanceColor, CircleShape)
-                            )
-                            Text(
-                                text = task.title,
-                                style = AppTextStyles.titleMedium.copy(
-                                    textDecoration = if (task.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
-                                    color = if (task.isCompleted) AppColors.textSecondary else AppColors.textPrimary,
-                                    fontSize = Responsive.fp(14f)
-                                ),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                        // Title row
+                        Text(
+                            text = task.title,
+                            style = AppTextStyles.titleMedium.copy(
+                                textDecoration = if (task.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                                color = if (task.isCompleted) AppColors.textSecondary else AppColors.textPrimary,
+                                fontSize = Responsive.fp(16f),
+                                fontWeight = FontWeight.Bold
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
 
+                        // Description line
                         if (!task.description.isNullOrEmpty()) {
                             Text(
                                 text = task.description,
-                                style = AppTextStyles.bodySmall.copy(fontSize = Responsive.fp(11f)),
+                                style = AppTextStyles.bodySmall.copy(fontSize = Responsive.fp(12f)),
                                 color = AppColors.textSecondary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -789,113 +944,124 @@ fun TaskItemRow(
                             )
                         }
 
-                        if (!task.timeLabel.isNullOrEmpty()) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier = Modifier.padding(top = 4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.AccessTime,
-                                    contentDescription = null,
-                                    tint = AppColors.textHint,
-                                    modifier = Modifier.size(Responsive.sp(12f))
-                                )
-                                Text(
-                                    text = task.timeLabel,
-                                    style = AppTextStyles.caption.copy(fontSize = Responsive.fp(11f)),
-                                    color = AppColors.textHint
-                                )
-                            }
-                        }
+                        // Frequency and time metadata row
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            // Frequency label
+                            if (task.frequency != "once") {
+                                val freqIcon = if (task.frequency == "daily") Icons.Default.Refresh else Icons.Default.DateRange
+                                val freqLabel = if (task.frequency == "daily") "Daily" else {
+                                    val names = mapOf(1 to "Mon", 2 to "Tue", 3 to "Wed", 4 to "Thu", 5 to "Fri", 6 to "Sat", 7 to "Sun")
+                                    val days = task.weekDays
+                                    if (days.size >= 5 && days.containsAll(listOf(1, 2, 3, 4, 5))) "Weekdays"
+                                    else if (days.size == 2 && days.containsAll(listOf(6, 7))) "Weekends"
+                                    else if (days.size == 7) "Every day"
+                                    else days.sorted().mapNotNull { names[it]?.first()?.toString() }.joinToString(" ")
+                                }
 
-                        // Frequency indicator on tile bottom
-                        if (task.frequency != "once") {
-                            val freqIcon = if (task.frequency == "daily") Icons.Default.Refresh else Icons.Default.DateRange
-                            // Define quick abbreviation days
-                            val freqLabel = if (task.frequency == "daily") "Daily" else {
-                                val names = mapOf(1 to "Mon", 2 to "Tue", 3 to "Wed", 4 to "Thu", 5 to "Fri", 6 to "Sat", 7 to "Sun")
-                                val days = task.weekDays
-                                if (days.size >= 5 && days.containsAll(listOf(1, 2, 3, 4, 5))) "Weekdays"
-                                else if (days.size == 2 && days.containsAll(listOf(6, 7))) "Weekends"
-                                else if (days.size == 7) "Every day"
-                                else days.sorted().mapNotNull { names[it]?.first()?.toString() }.joinToString(" ")
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = freqIcon,
+                                        contentDescription = "Frequency",
+                                        tint = if (isDark) AppColors.textHint else AppColors.getLegibleColor(taskColor).copy(alpha = 0.8f),
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Text(
+                                        text = freqLabel,
+                                        style = AppTextStyles.caption.copy(
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (isDark) AppColors.textSecondary else AppColors.getLegibleColor(taskColor).copy(alpha = 0.8f)
+                                        )
+                                    )
+                                }
                             }
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier = Modifier.padding(top = 4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = freqIcon,
-                                    contentDescription = "Frequency repeat pattern",
-                                    tint = AppColors.textHint,
-                                    modifier = Modifier.size(10.dp)
-                                )
-                                Text(
-                                    text = freqLabel,
-                                    style = AppTextStyles.caption.copy(fontSize = 10.sp),
-                                    color = AppColors.textHint
-                                )
+
+                            // Time label
+                            if (!task.timeLabel.isNullOrEmpty()) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AccessTime,
+                                        contentDescription = "Time",
+                                        tint = AppColors.textHint,
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Text(
+                                        text = task.timeLabel,
+                                        style = AppTextStyles.caption.copy(fontSize = 11.sp),
+                                        color = AppColors.textSecondary
+                                    )
+                                }
                             }
                         }
                     }
                 }
 
+                // Action controls row (importance label + buttons)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Importance badge (priority/moderate only)
                     if (task.importance != "regular") {
-                        val badgeText = if (task.importance == "priority") "🔥 High" else "⚡ Mid"
+                        val badgeText = if (task.importance == "priority") "High" else "Mid"
                         val badgeColor = AppColors.getImportanceColor(task.importance)
                         Box(
                             modifier = Modifier
                                 .padding(end = 4.dp)
-                                .background(badgeColor.copy(alpha = 0.12f), RoundedCornerShape(4.dp))
-                                .border(0.5.dp, badgeColor.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                                .background(badgeColor.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
+                                .border(0.5.dp, badgeColor.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Text(
                                 text = badgeText,
                                 style = AppTextStyles.caption.copy(
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
                                     color = badgeColor
                                 )
                             )
                         }
                     }
 
-                    // Quick Edit Button
-                    IconButton(
-                        onClick = onEdit,
-                        modifier = Modifier
-                            .size(Responsive.sp(36f))
-                            .testTag("task_edit_button_${task.id}")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit Task",
-                            tint = chosenColor.copy(alpha = 0.8f),
-                            modifier = Modifier.size(Responsive.sp(18f))
-                        )
-                    }
+                    if (!isLocked) {
+                        // Edit
+                        IconButton(
+                            onClick = onEdit,
+                            modifier = Modifier
+                                .size(Responsive.sp(34f))
+                                .testTag("task_edit_button_${task.id}")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Edit Task",
+                                tint = if (isDark) AppColors.textSecondary else AppColors.getLegibleColor(taskColor).copy(alpha = 0.8f),
+                                modifier = Modifier.size(Responsive.sp(16f))
+                            )
+                        }
 
-                    // Quick Delete Button
-                    IconButton(
-                        onClick = onDelete,
-                        modifier = Modifier
-                            .size(Responsive.sp(36f))
-                            .testTag("task_delete_button_${task.id}")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete Task",
-                            tint = AppColors.danger.copy(alpha = 0.6f),
-                            modifier = Modifier.size(Responsive.sp(18f))
-                        )
+                        // Delete
+                        IconButton(
+                            onClick = onDelete,
+                            modifier = Modifier
+                                .size(Responsive.sp(34f))
+                                .testTag("task_delete_button_${task.id}")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete Task",
+                                tint = AppColors.danger.copy(alpha = 0.6f),
+                                modifier = Modifier.size(Responsive.sp(16f))
+                            )
+                        }
                     }
                 }
             }
@@ -924,7 +1090,6 @@ fun AddTaskDialog(
     var selectedMinute by remember { mutableIntStateOf(0) }
     var isAM by remember { mutableStateOf(true) }
     var showTimePicker by remember { mutableStateOf(false) }
-    var showNativeTimePicker by remember { mutableStateOf(false) }
 
     val formattedTime = remember(showTimePicker, selectedHour, selectedMinute, isAM) {
         if (!showTimePicker) null
@@ -1000,6 +1165,7 @@ fun AddTaskDialog(
                         )
                         .clickable {
                             com.example.core.utils.SoundService.playTap()
+                            com.example.core.utils.HapticService.selectionClick()
                             showTimePicker = !showTimePicker
                         }
                         .padding(horizontal = 16.dp, vertical = 13.dp)
@@ -1027,6 +1193,7 @@ fun AddTaskDialog(
                                     .size(24.dp)
                                     .clickable {
                                         com.example.core.utils.SoundService.playTap()
+                                        com.example.core.utils.HapticService.selectionClick()
                                         showTimePicker = false
                                         selectedHour = 8
                                         selectedMinute = 0
@@ -1054,146 +1221,18 @@ fun AddTaskDialog(
 
                 // Expandable picker section
                 AnimatedVisibility(visible = showTimePicker) {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = AppColors.bgTertiary),
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(0.8.dp, AppColors.border, RoundedCornerShape(14.dp)),
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = getLabel("Quick Pick", "त्वरित चयन", "द्रुत निवड"),
-                                style = AppTextStyles.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                            )
-
-                            // Quick time chips (Grid 2 rows of 3 columns)
-                            val quickTimes = listOf(
-                                Triple("🌅 6 AM", 6, true),
-                                Triple("🌄 7 AM", 7, true),
-                                Triple("🌞 9 AM", 9, true),
-                                Triple("☀️ 12 PM", 12, false),
-                                Triple("🌆 6 PM", 6, false),
-                                Triple("🌙 9 PM", 9, false)
-                            )
-
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    quickTimes.take(3).forEach { (label, hr, am) ->
-                                        val isChosen = selectedHour == hr && selectedMinute == 0 && isAM == am
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clip(RoundedCornerShape(20.dp))
-                                                .background(if (isChosen) accentColor.copy(alpha = 0.15f) else AppColors.bgPrimary)
-                                                .border(
-                                                    width = if (isChosen) 1.2.dp else 0.8.dp,
-                                                    color = if (isChosen) accentColor else AppColors.border,
-                                                    shape = RoundedCornerShape(20.dp)
-                                                )
-                                                .clickable {
-                                                    com.example.core.utils.SoundService.playTap()
-                                                    selectedHour = hr
-                                                    selectedMinute = 0
-                                                    isAM = am
-                                                }
-                                                .padding(vertical = 6.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = label,
-                                                style = AppTextStyles.caption.copy(
-                                                    fontSize = 12.sp,
-                                                    fontWeight = if (isChosen) FontWeight.SemiBold else FontWeight.Normal,
-                                                    color = if (isChosen) accentColor else AppColors.textSecondary
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    quickTimes.takeLast(3).forEach { (label, hr, am) ->
-                                        val isChosen = selectedHour == hr && selectedMinute == 0 && isAM == am
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clip(RoundedCornerShape(20.dp))
-                                                .background(if (isChosen) accentColor.copy(alpha = 0.15f) else AppColors.bgPrimary)
-                                                .border(
-                                                    width = if (isChosen) 1.2.dp else 0.8.dp,
-                                                    color = if (isChosen) accentColor else AppColors.border,
-                                                    shape = RoundedCornerShape(20.dp)
-                                                )
-                                                .clickable {
-                                                    com.example.core.utils.SoundService.playTap()
-                                                    selectedHour = hr
-                                                    selectedMinute = 0
-                                                    isAM = am
-                                                }
-                                                .padding(vertical = 6.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = label,
-                                                style = AppTextStyles.caption.copy(
-                                                    fontSize = 12.sp,
-                                                    fontWeight = if (isChosen) FontWeight.SemiBold else FontWeight.Normal,
-                                                    color = if (isChosen) accentColor else AppColors.textSecondary
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            Divider(color = AppColors.border)
-
-                            Text(
-                                text = getLabel("Custom Time", "कस्टम समय", "सानुकूल वेळ"),
-                                style = AppTextStyles.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                            )
-
-                            Button(
-                                onClick = {
-                                    com.example.core.utils.SoundService.playTap()
-                                    showNativeTimePicker = true
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = AppColors.bgPrimary),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(0.8.dp, AppColors.border, RoundedCornerShape(10.dp)),
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = getLabel("Select Custom Time", "कस्टम समय चुनें", "सानुकूल वेळ निवडा"),
-                                        color = AppColors.textPrimary,
-                                        style = AppTextStyles.bodyMedium
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.AccessTime,
-                                        contentDescription = null,
-                                        tint = accentColor,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    TimePickerSheet(
+                        selectedHour = selectedHour,
+                        selectedMinute = selectedMinute,
+                        isAM = isAM,
+                        onTimeChanged = { hour, minute, am ->
+                            selectedHour = hour
+                            selectedMinute = minute
+                            isAM = am
+                        },
+                        accentColor = accentColor,
+                        getLabel = getLabel
+                    )
                 }
 
                 // ── REPEAT SYSTEM ─────────────────
@@ -1218,6 +1257,7 @@ fun AddTaskDialog(
                                 .weight(1f)
                                 .clickable {
                                     com.example.core.utils.SoundService.playTap()
+                                    com.example.core.utils.HapticService.selectionClick()
                                     selectedFrequency = value
                                     if (value != "weekly") {
                                         selectedWeekDays.clear()
@@ -1289,6 +1329,7 @@ fun AddTaskDialog(
                                         )
                                         .clickable {
                                             com.example.core.utils.SoundService.playTap()
+                                            com.example.core.utils.HapticService.selectionClick()
                                             if (isSelected) selectedWeekDays.remove(dayNum)
                                             else selectedWeekDays.add(dayNum)
                                         },
@@ -1320,6 +1361,7 @@ fun AddTaskDialog(
                                         .border(0.8.dp, AppColors.border, RoundedCornerShape(20.dp))
                                         .clickable {
                                             com.example.core.utils.SoundService.playTap()
+                                            com.example.core.utils.HapticService.selectionClick()
                                             selectedWeekDays.clear()
                                             selectedWeekDays.addAll(dayValues)
                                         }
@@ -1367,9 +1409,10 @@ fun AddTaskDialog(
                             modifier = Modifier
                                 .weight(1f)
                                 .clickable {
-                                    com.example.core.utils.SoundService.playTap()
-                                    selectedImportance = level
-                                },
+                                            com.example.core.utils.SoundService.playTap()
+                                            com.example.core.utils.HapticService.selectionClick()
+                                            selectedImportance = level
+                                        },
                             shape = RoundedCornerShape(12.dp),
                             border = BorderStroke(
                                 width = if (isSelected) 1.5.dp else 0.8.dp,
@@ -1421,7 +1464,11 @@ fun AddTaskDialog(
                                     color = if (isSelected) Color.White else Color.Transparent,
                                     shape = CircleShape
                                 )
-                                .clickable { selectedColorIdx = index }
+                                .clickable {
+                                    com.example.core.utils.SoundService.playTap()
+                                    com.example.core.utils.HapticService.selectionClick()
+                                    selectedColorIdx = index
+                                }
                         )
                     }
                 }
@@ -1434,7 +1481,11 @@ fun AddTaskDialog(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(onClick = {
+                        com.example.core.utils.SoundService.playTap()
+                        com.example.core.utils.HapticService.selectionClick()
+                        onDismiss()
+                    }) {
                         Text(
                             text = getLabel("Cancel", "रद्द करें", "रद्द करा"),
                             color = AppColors.textSecondary
@@ -1446,6 +1497,8 @@ fun AddTaskDialog(
                             if (title.isNotBlank()) {
                                 // Validation for weekly tasks
                                 if (selectedFrequency == "weekly" && selectedWeekDays.isEmpty()) {
+                                    com.example.core.utils.SoundService.playError()
+                                    com.example.core.utils.HapticService.error()
                                     android.widget.Toast.makeText(
                                         com.example.StreaklyApp.instance,
                                         "Please select at least one day for weekly tasks",
@@ -1453,6 +1506,8 @@ fun AddTaskDialog(
                                     ).show()
                                     return@Button
                                 }
+                                com.example.core.utils.SoundService.playAdd()
+                                com.example.core.utils.HapticService.confirm()
                                 onTaskAdded(
                                     title.trim(),
                                     desc.trim().ifBlank { null },
@@ -1479,22 +1534,7 @@ fun AddTaskDialog(
         }
     }
 
-    if (showNativeTimePicker) {
-        Material3TimePickerDialog(
-            initialHour = selectedHour,
-            initialMinute = selectedMinute,
-            initialIsAM = isAM,
-            accentColor = accentColor,
-            getLabel = getLabel,
-            onDismiss = { showNativeTimePicker = false },
-            onConfirm = { hour, minute, am ->
-                selectedHour = hour
-                selectedMinute = minute
-                isAM = am
-                showNativeTimePicker = false
-            }
-        )
-    }
+    // Time picker dialog handled internally by TimePickerSheet
 }
 
 @Composable
@@ -1617,6 +1657,7 @@ fun EditTaskDialog(
                         )
                         .clickable {
                             com.example.core.utils.SoundService.playTap()
+                            com.example.core.utils.HapticService.selectionClick()
                             showTimePicker = !showTimePicker
                         }
                         .padding(horizontal = 16.dp, vertical = 13.dp)
@@ -1644,6 +1685,7 @@ fun EditTaskDialog(
                                     .size(24.dp)
                                     .clickable {
                                         com.example.core.utils.SoundService.playTap()
+                                        com.example.core.utils.HapticService.selectionClick()
                                         showTimePicker = false
                                         selectedHour = 8
                                         selectedMinute = 0
@@ -1671,145 +1713,18 @@ fun EditTaskDialog(
 
                 // Expandable time picker section
                 AnimatedVisibility(visible = showTimePicker) {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = AppColors.bgTertiary),
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(0.8.dp, AppColors.border, RoundedCornerShape(14.dp)),
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                text = getLabel("Quick Pick", "त्वरित चयन", "द्रुत निवड"),
-                                style = AppTextStyles.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                            )
-
-                            val quickTimes = listOf(
-                                Triple("🌅 6 AM", 6, true),
-                                Triple("🌄 7 AM", 7, true),
-                                Triple("🌞 9 AM", 9, true),
-                                Triple("☀️ 12 PM", 12, false),
-                                Triple("🌆 6 PM", 6, false),
-                                Triple("🌙 9 PM", 9, false)
-                            )
-
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    quickTimes.take(3).forEach { (label, hr, am) ->
-                                        val isChosen = selectedHour == hr && selectedMinute == 0 && isAM == am
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clip(RoundedCornerShape(20.dp))
-                                                .background(if (isChosen) accentColor.copy(alpha = 0.15f) else AppColors.bgPrimary)
-                                                .border(
-                                                    width = if (isChosen) 1.2.dp else 0.8.dp,
-                                                    color = if (isChosen) accentColor else AppColors.border,
-                                                    shape = RoundedCornerShape(20.dp)
-                                                )
-                                                .clickable {
-                                                    com.example.core.utils.SoundService.playTap()
-                                                    selectedHour = hr
-                                                    selectedMinute = 0
-                                                    isAM = am
-                                                }
-                                                .padding(vertical = 6.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = label,
-                                                style = AppTextStyles.caption.copy(
-                                                    fontSize = 12.sp,
-                                                    fontWeight = if (isChosen) FontWeight.SemiBold else FontWeight.Normal,
-                                                    color = if (isChosen) accentColor else AppColors.textSecondary
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    quickTimes.takeLast(3).forEach { (label, hr, am) ->
-                                        val isChosen = selectedHour == hr && selectedMinute == 0 && isAM == am
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .clip(RoundedCornerShape(20.dp))
-                                                .background(if (isChosen) accentColor.copy(alpha = 0.15f) else AppColors.bgPrimary)
-                                                .border(
-                                                    width = if (isChosen) 1.2.dp else 0.8.dp,
-                                                    color = if (isChosen) accentColor else AppColors.border,
-                                                    shape = RoundedCornerShape(20.dp)
-                                                )
-                                                .clickable {
-                                                    com.example.core.utils.SoundService.playTap()
-                                                    selectedHour = hr
-                                                    selectedMinute = 0
-                                                    isAM = am
-                                                }
-                                                .padding(vertical = 6.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = label,
-                                                style = AppTextStyles.caption.copy(
-                                                    fontSize = 12.sp,
-                                                    fontWeight = if (isChosen) FontWeight.SemiBold else FontWeight.Normal,
-                                                    color = if (isChosen) accentColor else AppColors.textSecondary
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            Divider(color = AppColors.border)
-
-                            Text(
-                                text = getLabel("Custom Time", "कस्टम समय", "सानुकूल वेळ"),
-                                style = AppTextStyles.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                            )
-
-                            Button(
-                                onClick = {
-                                    com.example.core.utils.SoundService.playTap()
-                                    showNativeTimePicker = true
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = AppColors.bgPrimary),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(0.8.dp, AppColors.border, RoundedCornerShape(10.dp)),
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = getLabel("Select Custom Time", "कस्टम समय चुनें", "सानुकूल वेळ निवडा"),
-                                        color = AppColors.textPrimary,
-                                        style = AppTextStyles.bodyMedium
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.AccessTime,
-                                        contentDescription = null,
-                                        tint = accentColor,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    TimePickerSheet(
+                        selectedHour = selectedHour,
+                        selectedMinute = selectedMinute,
+                        isAM = isAM,
+                        onTimeChanged = { hour, minute, am ->
+                            selectedHour = hour
+                            selectedMinute = minute
+                            isAM = am
+                        },
+                        accentColor = accentColor,
+                        getLabel = getLabel
+                    )
                 }
 
                 // ── REPEAT SYSTEM ─────────────────
@@ -1834,6 +1749,7 @@ fun EditTaskDialog(
                                 .weight(1f)
                                 .clickable {
                                     com.example.core.utils.SoundService.playTap()
+                                    com.example.core.utils.HapticService.selectionClick()
                                     selectedFrequency = value
                                     if (value != "weekly") {
                                         selectedWeekDays.clear()
@@ -1905,6 +1821,7 @@ fun EditTaskDialog(
                                         )
                                         .clickable {
                                             com.example.core.utils.SoundService.playTap()
+                                            com.example.core.utils.HapticService.selectionClick()
                                             if (isSelected) selectedWeekDays.remove(dayNum)
                                             else selectedWeekDays.add(dayNum)
                                         },
@@ -1936,6 +1853,7 @@ fun EditTaskDialog(
                                         .border(0.8.dp, AppColors.border, RoundedCornerShape(20.dp))
                                         .clickable {
                                             com.example.core.utils.SoundService.playTap()
+                                            com.example.core.utils.HapticService.selectionClick()
                                             selectedWeekDays.clear()
                                             selectedWeekDays.addAll(dayValues)
                                         }
@@ -1983,9 +1901,10 @@ fun EditTaskDialog(
                             modifier = Modifier
                                 .weight(1f)
                                 .clickable {
-                                    com.example.core.utils.SoundService.playTap()
-                                    selectedImportance = level
-                                },
+                                            com.example.core.utils.SoundService.playTap()
+                                            com.example.core.utils.HapticService.selectionClick()
+                                            selectedImportance = level
+                                        },
                             shape = RoundedCornerShape(12.dp),
                             border = BorderStroke(
                                 width = if (isSelected) 1.5.dp else 0.8.dp,
@@ -2037,7 +1956,11 @@ fun EditTaskDialog(
                                     color = if (isSelected) Color.White else Color.Transparent,
                                     shape = CircleShape
                                 )
-                                .clickable { selectedColorIdx = index }
+                                .clickable {
+                                    com.example.core.utils.SoundService.playTap()
+                                    com.example.core.utils.HapticService.selectionClick()
+                                    selectedColorIdx = index
+                                }
                         )
                     }
                 }
@@ -2050,7 +1973,11 @@ fun EditTaskDialog(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(onClick = {
+                        com.example.core.utils.SoundService.playTap()
+                        com.example.core.utils.HapticService.selectionClick()
+                        onDismiss()
+                    }) {
                         Text(
                             text = getLabel("Cancel", "रद्द करें", "रद्द करा"),
                             color = AppColors.textSecondary
@@ -2061,6 +1988,8 @@ fun EditTaskDialog(
                         onClick = {
                             if (title.isNotBlank()) {
                                 if (selectedFrequency == "weekly" && selectedWeekDays.isEmpty()) {
+                                    com.example.core.utils.SoundService.playError()
+                                    com.example.core.utils.HapticService.error()
                                     android.widget.Toast.makeText(
                                         com.example.StreaklyApp.instance,
                                         "Please select at least one day for weekly tasks",
@@ -2068,6 +1997,8 @@ fun EditTaskDialog(
                                     ).show()
                                     return@Button
                                 }
+                                com.example.core.utils.SoundService.playTap()
+                                com.example.core.utils.HapticService.confirm()
                                 onTaskUpdated(
                                     title.trim(),
                                     desc.trim().ifBlank { null },
@@ -2094,22 +2025,7 @@ fun EditTaskDialog(
         }
     }
 
-    if (showNativeTimePicker) {
-        Material3TimePickerDialog(
-            initialHour = selectedHour,
-            initialMinute = selectedMinute,
-            initialIsAM = isAM,
-            accentColor = accentColor,
-            getLabel = getLabel,
-            onDismiss = { showNativeTimePicker = false },
-            onConfirm = { hour, minute, am ->
-                selectedHour = hour
-                selectedMinute = minute
-                isAM = am
-                showNativeTimePicker = false
-            }
-        )
-    }
+    // Time picker dialog handled internally by TimePickerSheet
 }
 
 @Composable
@@ -2126,76 +2042,4 @@ fun SectionLabel(text: String) {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun Material3TimePickerDialog(
-    initialHour: Int,
-    initialMinute: Int,
-    initialIsAM: Boolean,
-    accentColor: Color,
-    getLabel: (String, String, String) -> String,
-    onDismiss: () -> Unit,
-    onConfirm: (Int, Int, Boolean) -> Unit
-) {
-    val initialHour24 = if (initialIsAM) {
-        if (initialHour == 12) 0 else initialHour
-    } else {
-        if (initialHour == 12) 12 else initialHour + 12
-    }
-    val state = rememberTimePickerState(
-        initialHour = initialHour24,
-        initialMinute = initialMinute,
-        is24Hour = false
-    )
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val isAMResult = state.hour < 12
-                    val hour12Result = when {
-                        state.hour == 0 -> 12
-                        state.hour == 12 -> 12
-                        state.hour > 12 -> state.hour - 12
-                        else -> state.hour
-                    }
-                    onConfirm(hour12Result, state.minute, isAMResult)
-                }
-            ) {
-                Text(getLabel("Confirm", "पुष्टि करें", "निश्चित करा"), color = accentColor, fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(getLabel("Cancel", "रद्द करें", "रद्द करा"), color = AppColors.textSecondary)
-            }
-        },
-        text = {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                TimePicker(
-                    state = state,
-                    colors = TimePickerDefaults.colors(
-                        clockDialSelectedContentColor = Color.Black,
-                        clockDialUnselectedContentColor = AppColors.textPrimary,
-                        selectorColor = accentColor,
-                        periodSelectorSelectedContainerColor = accentColor.copy(alpha = 0.2f),
-                        periodSelectorUnselectedContainerColor = AppColors.bgTertiary,
-                        periodSelectorSelectedContentColor = accentColor,
-                        periodSelectorUnselectedContentColor = AppColors.textSecondary,
-                        timeSelectorSelectedContainerColor = accentColor.copy(alpha = 0.2f),
-                        timeSelectorUnselectedContainerColor = AppColors.bgTertiary,
-                        timeSelectorSelectedContentColor = accentColor,
-                        timeSelectorUnselectedContentColor = AppColors.textPrimary
-                    )
-                )
-            }
-        },
-        containerColor = AppColors.bgSecondary,
-        shape = RoundedCornerShape(28.dp),
-        modifier = Modifier.border(1.dp, AppColors.border, RoundedCornerShape(28.dp))
-    )
-}
+// Material3TimePickerDialog moved to TimePickerSheet.kt

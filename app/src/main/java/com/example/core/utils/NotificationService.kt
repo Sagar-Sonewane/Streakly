@@ -28,6 +28,18 @@ class NotificationService(private val context: Context) {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            try {
+                notificationManager.deleteNotificationChannel(CHANNEL_ID)
+            } catch (e: Exception) {
+                Log.e("NotificationService", "Error deleting notification channel: ${e.message}")
+            }
+
+            val soundUri = android.net.Uri.parse("android.resource://${context.packageName}/${com.example.R.raw.notification}")
+            val audioAttributes = android.media.AudioAttributes.Builder()
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+                .build()
+
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
@@ -37,6 +49,7 @@ class NotificationService(private val context: Context) {
                 enableLights(true)
                 enableVibration(true)
                 vibrationPattern = longArrayOf(0, 250, 250, 250)
+                setSound(soundUri, audioAttributes)
             }
             notificationManager.createNotificationChannel(channel)
         }

@@ -35,6 +35,7 @@ class ScheduledNotificationReceiver : BroadcastReceiver() {
         val title = if (isTest) "Streakly Test Notification" else "Stay on Track! 🔥"
         val message = if (isTest) "Your notification system is working perfectly." else "Time to log your habits and keep your streaks alive!"
 
+        val soundUri = android.net.Uri.parse("android.resource://${context.packageName}/${com.example.R.raw.notification}")
         val notification = NotificationCompat.Builder(context, NotificationService.CHANNEL_ID)
             .setSmallIcon(com.example.R.mipmap.ic_launcher)
             .setContentTitle(title)
@@ -43,6 +44,7 @@ class ScheduledNotificationReceiver : BroadcastReceiver() {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
+            .setSound(soundUri)
             .build()
 
         notificationManager.notify(NotificationService.NOTIFICATION_ID, notification)

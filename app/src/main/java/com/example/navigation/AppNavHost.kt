@@ -10,6 +10,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -58,6 +63,9 @@ import com.example.core.theme.StreaklyTheme
 import com.example.providers.Providers
 import com.example.shared.widgets.MilestonePopup
 import com.example.shared.widgets.AppHeader
+import com.example.shared.widgets.NameInputDialog
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.HeatmapScreen
 import com.example.ui.screens.StatsScreen
@@ -75,6 +83,17 @@ fun AppNavHost(
     navController: NavHostController = rememberNavController()
 ) {
     Responsive.Init()
+    val context = LocalContext.current
+    val sharedPrefs = remember(context) {
+        context.getSharedPreferences("streakly_prefs", Context.MODE_PRIVATE)
+    }
+    var userName by remember {
+        mutableStateOf(sharedPrefs.getString("user_name", "") ?: "")
+    }
+    var showFirstTimeNameDialog by remember {
+        mutableStateOf(sharedPrefs.getString("user_name", null) == null)
+    }
+
     val settingsProvider = Providers.getSettings()
     val streakProvider = Providers.getStreak()
 
@@ -89,8 +108,8 @@ fun AppNavHost(
     // Play milestone fanfare sound in response to unlocking
     LaunchedEffect(milestoneToClaim) {
         if (milestoneToClaim != null) {
-            com.example.core.utils.SoundService.playMilestone()
-            com.example.core.utils.HapticService.heavyImpact()
+            com.example.core.utils.SoundService.playSuccess()
+            com.example.core.utils.HapticService.strongClick()
         }
     }
 
@@ -152,6 +171,20 @@ fun AppNavHost(
                     }
                 }
 
+                if (showFirstTimeNameDialog) {
+                    NameInputDialog(
+                        initialName = userName,
+                        accentColor = AppColors.accentColorOptions[accentColorIndex],
+                        getLabel = getLabel,
+                        onDismiss = null,
+                        onConfirm = { newName ->
+                            sharedPrefs.edit().putString("user_name", newName).apply()
+                            userName = newName
+                            showFirstTimeNameDialog = false
+                        }
+                    )
+                }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
@@ -162,6 +195,15 @@ fun AppNavHost(
                             notificationsEnabled = settingsState.notificationsEnabled,
                             onNotificationsTap = {
                                 showNotificationSheet = true
+                            },
+                            language = currentLanguage,
+                            userName = userName,
+                            onStreakBadgeTap = {
+                                if (pagerState.currentPage != 0) {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(0)
+                                    }
+                                }
                             }
                         )
                     },
@@ -179,66 +221,67 @@ fun AppNavHost(
                                     .background(AppColors.border)
                             )
 
-                            NavigationBar(
-                                containerColor = AppColors.bgSecondary,
-                                tonalElevation = 0.dp,
-                                modifier = Modifier.height(Responsive.sp(62f))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(Responsive.sp(72f))
+                                    .background(AppColors.bgSecondary)
+                                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Screen.items.forEachIndexed { index, screen ->
                                     val isSelected = pagerState.currentPage == index
                                     
                                     val scale by animateFloatAsState(
-                                        targetValue = if (isSelected) 1.15f else 1.0f,
+                                        targetValue = if (isSelected) 1.05f else 1.0f,
                                         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
                                     )
 
-                                    NavigationBarItem(
-                                        selected = isSelected,
-                                        onClick = {
-                                            if (pagerState.currentPage != index) {
-                                                com.example.core.utils.SoundService.playTap()
-                                                coroutineScope.launch {
-                                                    pagerState.animateScrollToPage(index)
+                                    val activeAccent = AppColors.accentColorOptions[accentColorIndex]
+                                    val contentColor = if (isSelected) activeAccent else AppColors.textSecondary
+                                    val backgroundColor = if (isSelected) activeAccent.copy(alpha = 0.15f) else Color.Transparent
+
+                                    Box(
+                                        modifier = Modifier
+                                            .graphicsLayer(scaleX = scale, scaleY = scale)
+                                            .clip(RoundedCornerShape(50.dp))
+                                            .background(backgroundColor)
+                                            .clickable {
+                                                if (pagerState.currentPage != index) {
+                                                    com.example.core.utils.SoundService.playTap()
+                                                    com.example.core.utils.HapticService.selectionClick()
+                                                    coroutineScope.launch {
+                                                        pagerState.animateScrollToPage(index)
+                                                    }
                                                 }
                                             }
-                                        },
-                                        icon = {
-                                            Box(
-                                                modifier = Modifier
-                                                    .graphicsLayer(scaleX = scale, scaleY = scale)
-                                                    .background(
-                                                        color = if (isSelected) AppColors.accentColorOptions[accentColorIndex].copy(alpha = 0.12f) else Color.Transparent,
-                                                        shape = RoundedCornerShape(10.dp)
-                                                    )
-                                                    .padding(if (isSelected) 4.dp else 0.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Icon(
-                                                    imageVector = if (isSelected) screen.selectedIcon else screen.unselectedIcon,
-                                                    contentDescription = screen.getTitle(currentLanguage),
-                                                    modifier = Modifier.size(Responsive.sp(22f)),
-                                                    tint = if (isSelected) AppColors.accentColorOptions[accentColorIndex] else AppColors.textSecondary
+                                            .padding(horizontal = if (isSelected) 14.dp else 12.dp, vertical = 8.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = if (isSelected) screen.selectedIcon else screen.unselectedIcon,
+                                                contentDescription = screen.getTitle(currentLanguage),
+                                                modifier = Modifier.size(Responsive.sp(20f)),
+                                                tint = contentColor
+                                            )
+                                            if (isSelected) {
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = screen.getTitle(currentLanguage),
+                                                    style = AppTextStyles.label(contentColor).copy(
+                                                        fontSize = Responsive.fp(12f),
+                                                        fontWeight = FontWeight.Bold
+                                                    ),
+                                                    maxLines = 1
                                                 )
                                             }
-                                        },
-                                        label = {
-                                            Text(
-                                                text = screen.getTitle(currentLanguage),
-                                                style = AppTextStyles.caption.copy(
-                                                    fontSize = Responsive.fp(10f),
-                                                    fontWeight = if (isSelected) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Normal,
-                                                    color = if (isSelected) AppColors.accentColorOptions[accentColorIndex] else AppColors.textSecondary
-                                                )
-                                            )
-                                        },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = AppColors.accentColorOptions[accentColorIndex],
-                                            unselectedIconColor = AppColors.textSecondary,
-                                            selectedTextColor = AppColors.accentColorOptions[accentColorIndex],
-                                            unselectedTextColor = AppColors.textSecondary,
-                                            indicatorColor = Color.Transparent
-                                        )
-                                    )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -266,7 +309,12 @@ fun AppNavHost(
                                     1 -> HeatmapScreen()
                                     2 -> StatsScreen()
                                     3 -> ReflectScreen()
-                                    4 -> SettingsScreen()
+                                    4 -> SettingsScreen(
+                                        userName = userName,
+                                        onUserNameChanged = { newName ->
+                                            userName = newName
+                                        }
+                                    )
                                 }
                             }
                         }

@@ -69,7 +69,7 @@ class StreakProvider(
             val todayPct = if (todayTotal > 0) {
                 (todayCompleted.toDouble() / todayTotal * 100)
             } else {
-                100.0 // Default 100% if no tasks
+                0.0 // Default 0% if no tasks
             }
             val todayRecord = DayRecord(
                 dateKey = todayKey,

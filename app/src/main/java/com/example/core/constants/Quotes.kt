@@ -1,7 +1,6 @@
 package com.example.core.constants
 
 import java.util.Calendar
-import java.util.Collections
 import java.util.Random
 
 data class AnimeQuote(
@@ -14,204 +13,174 @@ data class AnimeQuote(
 object Quotes {
     val list = listOf(
         AnimeQuote(
-            text = "I'll leave tomorrow's problems to tomorrow's me.",
-            character = "Saitama",
-            anime = "One Punch Man"
+            text = "You do not rise to the level of your goals. You fall to the level of your systems.",
+            character = "James Clear",
+            anime = "Atomic Habits"
         ),
         AnimeQuote(
-            text = "Hard work is worthless for those that don't believe in themselves.",
-            character = "Naruto Uzumaki",
-            anime = "Naruto"
+            text = "We are what we repeatedly do. Excellence, then, is not an act, but a habit.",
+            character = "Aristotle",
+            anime = "Philosophy"
         ),
         AnimeQuote(
-            text = "If you don't take risks, you can't create a future.",
-            character = "Monkey D. Luffy",
-            anime = "One Piece"
+            text = "Discipline is the bridge between goals and accomplishment.",
+            character = "Jim Rohn",
+            anime = "Self-Discipline"
         ),
         AnimeQuote(
-            text = "Power comes in response to a need, not a desire.",
-            character = "Goku",
-            anime = "Dragon Ball Z"
+            text = "Success isn't always about greatness. It's about consistency. Consistent hard work leads to success.",
+            character = "Dwayne Johnson",
+            anime = "Consistency"
         ),
         AnimeQuote(
-            text = "A person grows up when he's able to overcome hardships.",
-            character = "Pain",
-            anime = "Naruto"
+            text = "In a growth mindset, challenges are exciting rather than threatening.",
+            character = "Carol Dweck",
+            anime = "Growth"
         ),
         AnimeQuote(
-            text = "Whatever you lose, you'll find it again. But what you throw away you'll never get back.",
-            character = "Kenshin Himura",
-            anime = "Rurouni Kenshin"
+            text = "People do not decide their futures, they decide their habits and their habits decide their futures.",
+            character = "F.M. Alexander",
+            anime = "Habits"
         ),
         AnimeQuote(
-            text = "The only ones who should kill are those who are prepared to be killed.",
-            character = "Lelouch",
-            anime = "Code Geass"
+            text = "Discipline is choosing between what you want now and what you want most.",
+            character = "Abraham Lincoln",
+            anime = "Discipline"
         ),
         AnimeQuote(
-            text = "It's not the face that makes someone a monster, it's the choices they make with their lives.",
-            character = "Naruto",
-            anime = "Naruto"
+            text = "It's not what we do once in a while that shapes our lives. It's what we do consistently.",
+            character = "Tony Robbins",
+            anime = "Consistency"
         ),
         AnimeQuote(
-            text = "Do not think about other things, there is only one thing you can do.",
-            character = "Roronoa Zoro",
-            anime = "One Piece"
+            text = "A person who never made a mistake never tried anything new.",
+            character = "Albert Einstein",
+            anime = "Growth"
         ),
         AnimeQuote(
-            text = "People's dreams never end.",
-            character = "Marshall D. Teach",
-            anime = "One Piece"
+            text = "Success is the sum of small efforts, repeated day in and day out.",
+            character = "Robert Collier",
+            anime = "Consistency"
         ),
         AnimeQuote(
-            text = "Fear is not evil. It tells you what your weakness is.",
-            character = "Gildarts Clive",
-            anime = "Fairy Tail"
+            text = "Without self-discipline, success is impossible, period.",
+            character = "Lou Holtz",
+            anime = "Discipline"
         ),
         AnimeQuote(
-            text = "The world isn't perfect. But it's there for us, doing the best it can.",
-            character = "Roy Mustang",
-            anime = "Fullmetal Alchemist"
+            text = "Our habits will make or break us. We become what we repeatedly do.",
+            character = "Sean Covey",
+            anime = "Habits"
         ),
         AnimeQuote(
-            text = "A hero is someone who, despite being afraid, still does what's right.",
-            character = "All Might",
-            anime = "My Hero Academia"
+            text = "It always seems impossible until it's done.",
+            character = "Nelson Mandela",
+            anime = "Growth"
         ),
         AnimeQuote(
-            text = "Go beyond. Plus Ultra.",
-            character = "All Might",
-            anime = "My Hero Academia"
+            text = "Discipline is the refining fire by which talent becomes ability.",
+            character = "Roy L. Smith",
+            anime = "Discipline"
         ),
         AnimeQuote(
-            text = "Sometimes I do feel like I'm a failure. But even so... I'm not gonna give up.",
-            character = "Izuku Midoriya",
-            anime = "My Hero Academia"
+            text = "Only the disciplined ones in life are free. If you are undisciplined, you are a slave to your moods and your passions.",
+            character = "Eliud Kipchoge",
+            anime = "Discipline"
         ),
         AnimeQuote(
-            text = "The moment you give up is the moment you let someone else win.",
-            character = "Koro-sensei",
-            anime = "Assassination Classroom"
+            text = "We first make our habits, then our habits make us.",
+            character = "John Dryden",
+            anime = "Habits"
         ),
         AnimeQuote(
-            text = "Giving up kills people. When people reject giving up... they finally win.",
-            character = "Alucard",
-            anime = "Hellsing"
+            text = "Change is inevitable. Growth is optional.",
+            character = "John Maxwell",
+            anime = "Growth"
         ),
         AnimeQuote(
-            text = "No matter how hard or impossible it is, never lose sight of your goal.",
-            character = "Monkey D. Luffy",
-            anime = "One Piece"
+            text = "The undisciplined are slaves to passions, appetites, and emotions.",
+            character = "Stephen Covey",
+            anime = "Discipline"
         ),
         AnimeQuote(
-            text = "Push through the pain. Giving up hurts more.",
-            character = "Vegeta",
-            anime = "Dragon Ball Z"
+            text = "Consistency is what transforms average into excellence.",
+            character = "Eric Thomas",
+            anime = "Consistency"
         ),
         AnimeQuote(
-            text = "A lesson without pain is meaningless. You can't gain anything without sacrificing something.",
-            character = "Edward Elric",
-            anime = "Fullmetal Alchemist"
+            text = "Life is change. Growth is optional. Choose wisely.",
+            character = "Karen Kaiser Clark",
+            anime = "Growth"
         ),
         AnimeQuote(
-            text = "If you don't like your destiny, don't accept it. Instead have the courage to change it.",
-            character = "Naruto Uzumaki",
-            anime = "Naruto"
+            text = "Sow an act, and you reap a habit; sow a habit, and you reap a character; sow a character, and you reap a destiny.",
+            character = "Samuel Smiles",
+            anime = "Habits"
         ),
         AnimeQuote(
-            text = "Knowing what it feels to be in pain is exactly why we try to be kind to others.",
-            character = "Nagato",
-            anime = "Naruto"
+            text = "Discipline is the soul of an army. It makes small numbers formidable.",
+            character = "George Washington",
+            anime = "Discipline"
         ),
         AnimeQuote(
-            text = "It's not about whether I can do it. I have to do it.",
-            character = "Eren Yeager",
-            anime = "Attack on Titan"
+            text = "I fear not the man who has practiced 10,000 kicks once, but I fear the man who has practiced one kick 10,000 times.",
+            character = "Bruce Lee",
+            anime = "Consistency"
         ),
         AnimeQuote(
-            text = "If you can't find a reason to fight, then you shouldn't be fighting.",
-            character = "Akame",
-            anime = "Akame ga Kill"
+            text = "To improve is to change; to be perfect is to change often.",
+            character = "Winston Churchill",
+            anime = "Growth"
         ),
         AnimeQuote(
-            text = "An excellent leader must be passionate about their work.",
-            character = "Erwin Smith",
-            anime = "Attack on Titan"
+            text = "Self-discipline is a form of freedom. Freedom from laziness and lethargy.",
+            character = "Harvey Dorfman",
+            anime = "Discipline"
         ),
         AnimeQuote(
-            text = "Dedicate your heart.",
-            character = "Erwin Smith",
-            anime = "Attack on Titan"
+            text = "It's the consistency that makes it art, not the subject.",
+            character = "Colleen Hoover",
+            anime = "Consistency"
         ),
         AnimeQuote(
-            text = "Even if I'm worthless and carry demon blood... I refuse to be defeated.",
-            character = "Tanjiro Kamado",
-            anime = "Demon Slayer"
+            text = "We grow up only when we begin to see that our own interest is bound up with that of others.",
+            character = "Eleanor Roosevelt",
+            anime = "Growth"
         ),
         AnimeQuote(
-            text = "The strong don't win. The ones who win are strong.",
-            character = "Rock Lee",
-            anime = "Naruto"
+            text = "With self-discipline, almost anything is possible.",
+            character = "Theodore Roosevelt",
+            anime = "Discipline"
         ),
         AnimeQuote(
-            text = "Wealth. Fame. Power. One man had it all: the Pirate King Gold Roger.",
-            character = "Narrator",
-            anime = "One Piece"
+            text = "When we strive to become better than we are, everything around us becomes better too.",
+            character = "Paulo Coelho",
+            anime = "Growth"
         ),
         AnimeQuote(
-            text = "There are no shortcuts to any place worth going.",
-            character = "Might Guy",
-            anime = "Naruto"
+            text = "The only person you are destined to become is the person you decide to be.",
+            character = "Ralph Waldo Emerson",
+            anime = "Growth"
         ),
         AnimeQuote(
-            text = "Prove your worth with your fists.",
-            character = "Inosuke Hashibira",
-            anime = "Demon Slayer"
+            text = "Chains of habit are too light to be felt until they are too heavy to be broken.",
+            character = "Warren Buffett",
+            anime = "Habits"
         ),
         AnimeQuote(
-            text = "A real ninja never gives up on a comrade.",
-            character = "Kakashi Hatake",
-            anime = "Naruto"
+            text = "Your habits are the method by which you build your identity.",
+            character = "James Clear",
+            anime = "Atomic Habits"
         ),
         AnimeQuote(
-            text = "Work hard in silence, let success make the noise.",
-            character = "Shoto Todoroki",
-            anime = "My Hero Academia"
+            text = "Small daily improvements over time lead to stunning results.",
+            character = "Robin Sharma",
+            anime = "Consistency"
         ),
         AnimeQuote(
-            text = "Don't give up. There's no shame in falling down. The true shame is to not stand up again.",
-            character = "Shintaro Midorima",
-            anime = "Kuroko's Basketball"
-        ),
-        AnimeQuote(
-            text = "The only thing we're allowed to do is believe that we won't regret the choice we made.",
-            character = "Levi Ackerman",
-            anime = "Attack on Titan"
-        ),
-        AnimeQuote(
-            text = "If nobody cares to accept you and wants you in this world, accept yourself.",
-            character = "Alibaba Saluja",
-            anime = "Magi"
-        ),
-        AnimeQuote(
-            text = "Even if things are painful and tough, people should appreciate what it means to be alive.",
-            character = "Yato",
-            anime = "Noragami"
-        ),
-        AnimeQuote(
-            text = "Being weak is nothing to be ashamed of. Staying weak is.",
-            character = "Fuegoleon Vermillion",
-            anime = "Black Clover"
-        ),
-        AnimeQuote(
-            text = "You can die anytime, but living takes true courage.",
-            character = "Kenshin Himura",
-            anime = "Rurouni Kenshin"
-        ),
-        AnimeQuote(
-            text = "Consistency is the proof of effort. Effort is the proof of will.",
-            character = "Rock Lee",
-            anime = "Naruto"
+            text = "Habit is persistence in practice.",
+            character = "Octavia Butler",
+            anime = "Habits"
         )
     )
 

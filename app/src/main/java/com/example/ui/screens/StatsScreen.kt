@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -9,6 +10,11 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LocalFireDepartment
@@ -118,18 +124,27 @@ fun MetricsGrid(
     accentColor: Color,
     getLabel: (String, String, String) -> String
 ) {
+    val isDark = AppColors.isDark
+    
+    // Define three different pastel colors for metrics cards
+    // Active (Accent Color), Longest (Blue), Total Days (Purple)
+    val activeBg = if (isDark) accentColor.copy(alpha = 0.18f) else accentColor.copy(alpha = 0.12f)
+    val longestBg = if (isDark) AppColors.blue.copy(alpha = 0.18f) else AppColors.blue.copy(alpha = 0.12f)
+    val totalBg = if (isDark) AppColors.purple.copy(alpha = 0.18f) else AppColors.purple.copy(alpha = 0.12f)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp),
+            .padding(horizontal = 20.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(Responsive.sp(10f))
     ) {
-        // Score 1: Flame streak
+        // Score 1: Active
         MetricCard(
             title = getLabel("ACTIVE", "सक्रिय", "सक्रिय"),
             value = "${streakModel.currentStreak}",
             unit = getLabel(" Days", " दिन", " दिवस"),
-            color = accentColor,
+            textColor = AppColors.getLegibleColor(accentColor),
+            bgColor = activeBg,
             modifier = Modifier.weight(1f)
         )
 
@@ -138,7 +153,8 @@ fun MetricsGrid(
             title = getLabel("LONGEST", "सर्वोच्च", "सर्वोच्च"),
             value = "${streakModel.longestStreak}",
             unit = getLabel(" Days", " दिन", " दिवस"),
-            color = AppColors.blue,
+            textColor = AppColors.getLegibleColor(AppColors.blue),
+            bgColor = longestBg,
             modifier = Modifier.weight(1f)
         )
 
@@ -147,7 +163,8 @@ fun MetricsGrid(
             title = getLabel("TOTAL DAYS", "कुल दिन", "एकूण दिवस"),
             value = "${streakModel.totalStreakDays}",
             unit = getLabel(" Done", " पूर्ण", " पूर्ण"),
-            color = AppColors.purple,
+            textColor = AppColors.getLegibleColor(AppColors.purple),
+            bgColor = totalBg,
             modifier = Modifier.weight(1f)
         )
     }
@@ -158,13 +175,16 @@ fun MetricCard(
     title: String,
     value: String,
     unit: String,
-    color: Color,
+    textColor: Color,
+    bgColor: Color,
     modifier: Modifier = Modifier
 ) {
     com.example.shared.widgets.StreaklyCard(
         modifier = modifier,
-        padding = 12.dp,
-        borderRadius = 20.dp
+        padding = 14.dp,
+        borderRadius = 24.dp, // Premium pill-shaped style
+        color = bgColor,
+        borderColor = textColor.copy(alpha = 0.15f)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -173,17 +193,20 @@ fun MetricCard(
         ) {
             Text(
                 text = title,
-                style = AppTextStyles.hint(AppColors.textSecondary).copy(
+                style = AppTextStyles.hint(textColor.copy(alpha = 0.7f)).copy(
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.0.sp
+                    letterSpacing = 1.2.sp,
+                    fontSize = 10.sp
                 ),
                 textAlign = TextAlign.Center,
                 maxLines = 1
             )
             Text(
                 text = value,
-                style = AppTextStyles.statMedium(color).copy(
-                    fontWeight = FontWeight.ExtraBold
+                style = AppTextStyles.statMedium(textColor).copy(
+                    fontWeight = FontWeight.Black,
+                    fontSize = 26.sp,
+                    letterSpacing = (-0.5).sp
                 ),
                 modifier = Modifier.padding(top = 4.dp),
                 textAlign = TextAlign.Center,
@@ -191,7 +214,9 @@ fun MetricCard(
             )
             Text(
                 text = unit,
-                style = AppTextStyles.hint(AppColors.textHint),
+                style = AppTextStyles.hint(textColor.copy(alpha = 0.6f)).copy(
+                    fontWeight = FontWeight.Bold
+                ),
                 textAlign = TextAlign.Center,
                 maxLines = 1
             )
@@ -206,6 +231,8 @@ fun WeeklyProgressChart(
     language: String,
     getLabel: (String, String, String) -> String
 ) {
+    val isDark = AppColors.isDark
+    
     // Generate the last 7 calendar days
     val lastSevenDays = remember {
         val cal = Calendar.getInstance()
@@ -218,84 +245,144 @@ fun WeeklyProgressChart(
         list
     }
 
+    // Get completion percentages for the last 7 days
+    val pcts = remember(dayRecords, lastSevenDays) {
+        lastSevenDays.map { dateKey ->
+            val record = dayRecords.find { it.dateKey == dateKey }
+            if (record == null || record.tasksTotal == 0) {
+                0f
+            } else {
+                record.completionPct.toFloat()
+            }
+        }
+    }
+
     com.example.shared.widgets.StreaklyCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 6.dp),
-        padding = 14.dp
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        padding = 20.dp,
+        borderRadius = 24.dp
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Row(
+            Text(
+                text = getLabel("EFFICIENCY PROGRESS", "सक्षम प्रगति", "कार्यक्षमता प्रगती आलेख"),
+                style = AppTextStyles.hint(AppColors.textHint).copy(
+                    letterSpacing = 1.5.sp,
+                    fontWeight = FontWeight.Black
+                ),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // Canvas drawing the Bezier area chart
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(Responsive.h(20f))
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+                    .height(130.dp)
             ) {
-                lastSevenDays.forEach { dateKey ->
-                    // Find actual day completion record
-                    val record = dayRecords.find { it.dateKey == dateKey }
-                    val pct = record?.completionPct ?: 0.0
-
-                    // Draw a column with height proportional to percentage completed
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        verticalArrangement = Arrangement.Bottom,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // Numeric percentage overhead
-                        Text(
-                            text = "${pct.toInt()}%",
-                            style = AppTextStyles.hint(
-                                if (pct >= 80.0) accentColor else AppColors.textSecondary
-                            ).copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(bottom = 4.dp)
+                val gridLineColor = AppColors.border
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val width = size.width
+                    val height = size.height
+                    
+                    // Draw horizontal grid lines (at 0%, 50%, 100%)
+                    val gridYs = listOf(0f, height / 2f, height)
+                    gridYs.forEach { yVal ->
+                        drawLine(
+                            color = gridLineColor,
+                            start = Offset(0f, yVal),
+                            end = Offset(width, yVal),
+                            strokeWidth = 1.5f,
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 12f), 0f)
                         )
+                    }
 
-                        // Colored Bar filled container
-                        Box(
-                            modifier = Modifier
-                                .width(20.dp)
-                                .fillMaxHeight(fraction = (pct / 100.0).toFloat().coerceIn(0.1f..1.0f))
-                                .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
-                                .background(
-                                    brush = Brush.verticalGradient(
-                                        listOf(
-                                            if (pct >= 80.0) accentColor else accentColor.copy(alpha = 0.5f),
-                                            accentColor.copy(alpha = 0.15f)
-                                        )
-                                    )
+                    if (pcts.isNotEmpty()) {
+                        val points = pcts.mapIndexed { idx, pct ->
+                            val x = idx * (width / 6f)
+                            // Invert pct so 100% is at y=0, 0% is at y=height (add bounds cushion)
+                            val y = height - (pct / 100f) * (height - 10f) - 5f
+                            Offset(x, y)
+                        }
+
+                        // Create Bezier Path
+                        val strokePath = Path().apply {
+                            moveTo(points[0].x, points[0].y)
+                            for (i in 0 until points.size - 1) {
+                                val p0 = points[i]
+                                val p1 = points[i + 1]
+                                val controlX = p0.x + (p1.x - p0.x) / 2f
+                                cubicTo(
+                                    controlX, p0.y,
+                                    controlX, p1.y,
+                                    p1.x, p1.y
                                 )
+                            }
+                        }
+
+                        // Create closed path for gradient area fill
+                        val fillPath = Path().apply {
+                            addPath(strokePath)
+                            lineTo(points.last().x, height)
+                            lineTo(points.first().x, height)
+                            close()
+                        }
+
+                        // Draw filled area with gradient
+                        drawPath(
+                            path = fillPath,
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    accentColor.copy(alpha = 0.35f),
+                                    Color.Transparent
+                                )
+                            )
                         )
+
+                        // Draw path stroke
+                        drawPath(
+                            path = strokePath,
+                            color = accentColor,
+                            style = Stroke(
+                                width = 6f,
+                                cap = StrokeCap.Round
+                            )
+                        )
+
+                        // Draw circular node points
+                        points.forEach { pt ->
+                            drawCircle(
+                                color = accentColor,
+                                radius = 10f,
+                                center = pt
+                            )
+                            drawCircle(
+                                color = Color.White,
+                                radius = 5f,
+                                center = pt
+                            )
+                        }
                     }
                 }
             }
 
-            // Days labels on X-axis and Divider line
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(AppColors.border)
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
+            // X-axis Day labels
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 lastSevenDays.forEach { dateKey ->
                     val label = DateUtils.getDayOfWeekLabel(dateKey, language)
                     Text(
                         text = label,
-                        style = AppTextStyles.label(AppColors.textSecondary).copy(fontWeight = FontWeight.Bold),
+                        style = AppTextStyles.label(AppColors.textSecondary).copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp
+                        ),
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center
                     )
@@ -316,7 +403,7 @@ fun MilestonesBoard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         val milestoneList = listOf(3, 7, 10, 20, 50, 100)
 
@@ -330,13 +417,32 @@ fun MilestonesBoard(
                     val isUnlocked = currentStreak >= milestone
                     
                     val details = rememberBadgeDetails(milestone, getLabel)
+                    
+                    // Unlocked / Claimed badge uses soft accent color, locked is subtle gray
+                    val badgeCardBg = if (isClaimed) {
+                        accentColor.copy(alpha = 0.08f)
+                    } else if (isUnlocked) {
+                        accentColor.copy(alpha = 0.04f)
+                    } else {
+                        AppColors.bgSecondary
+                    }
+
+                    val badgeBorderColor = if (isClaimed) {
+                        accentColor.copy(alpha = 0.35f)
+                    } else if (isUnlocked) {
+                        accentColor.copy(alpha = 0.2f)
+                    } else {
+                        AppColors.border
+                    }
 
                     com.example.shared.widgets.StreaklyCard(
                         modifier = Modifier
                             .weight(1f)
                             .testTag("milestone_badge_$milestone"),
-                        padding = 16.dp,
-                        color = if (isClaimed) accentColor.copy(alpha = 0.05f) else null
+                        padding = 18.dp,
+                        borderRadius = 24.dp, // Soft large rounded cards
+                        color = badgeCardBg,
+                        borderColor = badgeBorderColor
                     ) {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
@@ -345,10 +451,11 @@ fun MilestonesBoard(
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(48.dp)
+                                    .size(52.dp)
                                     .clip(CircleShape)
                                     .background(
                                         if (isClaimed) accentColor.copy(alpha = 0.15f)
+                                        else if (isUnlocked) accentColor.copy(alpha = 0.08f)
                                         else AppColors.bgPrimary
                                     ),
                                 contentAlignment = Alignment.Center
@@ -364,7 +471,7 @@ fun MilestonesBoard(
                                     Icon(
                                         imageVector = Icons.Default.LocalFireDepartment,
                                         contentDescription = "Unlocked",
-                                        tint = accentColor.copy(alpha = 0.5f),
+                                        tint = accentColor.copy(alpha = 0.6f),
                                         modifier = Modifier.size(26.dp)
                                     )
                                 } else {
@@ -380,14 +487,21 @@ fun MilestonesBoard(
                             Text(
                                 text = details.title,
                                 style = AppTextStyles.cardTitle(
-                                    if (isClaimed) accentColor else AppColors.textPrimary
-                                ).copy(fontWeight = FontWeight.Black),
-                                maxLines = 1
+                                    if (isClaimed) AppColors.getLegibleColor(accentColor)
+                                    else if (isUnlocked) AppColors.getLegibleColor(accentColor).copy(alpha = 0.8f)
+                                    else AppColors.textPrimary
+                                ).copy(fontWeight = FontWeight.Black, fontSize = 16.sp),
+                                maxLines = 1,
+                                textAlign = TextAlign.Center
                             )
 
                             Text(
                                 text = getLabel("Goal: $milestone Days", "लक्ष्य: $milestone दिन", "ध्येय: $milestone दिवस"),
-                                style = AppTextStyles.hint(AppColors.textSecondary)
+                                style = AppTextStyles.hint(
+                                    if (isClaimed || isUnlocked) AppColors.getLegibleColor(accentColor).copy(alpha = 0.6f)
+                                    else AppColors.textSecondary
+                                ).copy(fontWeight = FontWeight.Bold),
+                                textAlign = TextAlign.Center
                             )
                         }
                     }

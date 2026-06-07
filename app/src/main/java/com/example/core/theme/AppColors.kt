@@ -102,4 +102,17 @@ object AppColors {
     fun getImportanceColor(importance: String): Color {
         return importanceColorMap[importance] ?: Color(0xFF4A90FF)
     }
+
+    fun getLegibleColor(color: Color): Color {
+        if (isDark) return color
+        return when (color) {
+            accentOrange -> Color(0xFFD84315) // Deep Orange
+            electricViolet -> Color(0xFF4527A0) // Deep Purple/Violet
+            cyberTeal -> Color(0xFF00695C) // Deep Teal
+            neonGreen -> Color(0xFF2E7D32) // Deep Green
+            goldAmber -> Color(0xFFEF6C00) // Deep Amber
+            hotPink -> Color(0xFFC2185B) // Deep Pink
+            else -> color
+        }
+    }
 }

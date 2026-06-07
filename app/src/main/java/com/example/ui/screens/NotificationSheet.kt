@@ -12,9 +12,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.rounded.Notifications
@@ -154,6 +156,8 @@ fun NotificationSheet(
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
                             onClick = {
+                                com.example.core.utils.SoundService.playTap()
+                                com.example.core.utils.HapticService.selectionClick()
                                 val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                                     data = Uri.fromParts("package", context.packageName, null)
                                 }
@@ -225,6 +229,8 @@ fun NotificationSheet(
                 Switch(
                     checked = settingsState.notificationsEnabled && isPermissionGranted,
                     onCheckedChange = { checked ->
+                        com.example.core.utils.SoundService.playToggle()
+                        com.example.core.utils.HapticService.selectionClick()
                         if (checked) {
                             if (checkHasPermission()) {
                                 settingsProvider.updateNotificationsEnabled(true)
@@ -265,41 +271,50 @@ fun NotificationSheet(
                         .clip(RoundedCornerShape(16.dp))
                         .background(AppColors.bgPrimary)
                         .border(1.dp, AppColors.border, RoundedCornerShape(16.dp))
-                        .clickable { showTimePickerInSheet = true }
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                        .clickable {
+                            com.example.core.utils.SoundService.playTap()
+                            com.example.core.utils.HapticService.selectionClick()
+                            showTimePickerInSheet = true
+                        }
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(accentColor.copy(alpha = 0.12f)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(AppColors.border),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.AccessTime,
-                                contentDescription = null,
-                                tint = AppColors.textSecondary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = getLabel("Alert Time", "अनुस्मारक समय", "स्मरण वेळ"),
-                                style = AppTextStyles.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        Icon(
+                            imageVector = Icons.Default.AccessTime,
+                            contentDescription = null,
+                            tint = accentColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = getLabel("Alert Time", "अनुस्मारक समय", "स्मरण वेळ"),
+                            style = AppTextStyles.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
                                 color = AppColors.textPrimary
                             )
-                            Text(
-                                text = getLabel("Tap to modify alarm time", "समय बदलने के लिए टैप करें", "वेळ बदलण्यासाठी दाबा"),
-                                style = AppTextStyles.bodySmall,
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = getLabel("Tap to modify alarm time", "समय बदलने के लिए टैप करें", "वेळ बदलण्यासाठी दाबा"),
+                            style = AppTextStyles.bodySmall.copy(
+                                fontSize = 11.sp,
                                 color = AppColors.textSecondary
                             )
-                        }
+                        )
                     }
 
                     Row(
@@ -308,22 +323,18 @@ fun NotificationSheet(
                     ) {
                         Text(
                             text = formattedTime,
-                            style = AppTextStyles.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = accentColor
-                        )
-                        Button(
-                            onClick = { showTimePickerInSheet = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = AppColors.border),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                            modifier = Modifier.height(30.dp)
-                        ) {
-                            Text(
-                                text = getLabel("Change", "बदलें", "बदला"),
-                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
-                                color = AppColors.textPrimary
+                            style = AppTextStyles.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                color = AppColors.textSecondary
                             )
-                        }
+                        )
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowRight,
+                            contentDescription = "Go",
+                            tint = AppColors.textHint,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
 
@@ -362,6 +373,8 @@ fun NotificationSheet(
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = {
+                        com.example.core.utils.SoundService.playTap()
+                        com.example.core.utils.HapticService.selectionClick()
                         StreaklyApp.instance.notificationService.sendTestNotification()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = accentColor.copy(alpha = 0.1f)),

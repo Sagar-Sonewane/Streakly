@@ -131,7 +131,11 @@ fun ReflectScreen(
                                         color = if (isSelected) accentColor else AppColors.border,
                                         shape = RoundedCornerShape(12.dp)
                                     )
-                                    .clickable { selectedMoodIndex = idx }
+                                    .clickable {
+                                        com.example.core.utils.SoundService.playTap()
+                                        com.example.core.utils.HapticService.selectionClick()
+                                        selectedMoodIndex = idx
+                                    }
                                     .padding(vertical = 10.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -192,6 +196,8 @@ fun ReflectScreen(
                     // Save reflection submit CTA
                     Button(
                         onClick = {
+                            com.example.core.utils.SoundService.playTap()
+                            com.example.core.utils.HapticService.confirm()
                             focusManager.clearFocus()
                             val selectedEmoji = moodOptions[selectedMoodIndex].emoji
                             reflectionProvider.saveReflection(
@@ -301,7 +307,11 @@ fun JournalItemRow(
                 }
 
                 IconButton(
-                    onClick = onDelete,
+                    onClick = {
+                        com.example.core.utils.SoundService.playDelete()
+                        com.example.core.utils.HapticService.doubleClick()
+                        onDelete()
+                    },
                     modifier = Modifier
                         .size(36.dp)
                         .testTag("delete_journal_button_${journal.id}")

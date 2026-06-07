@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,18 +47,41 @@ fun AppHeader(
     accentColorIndex: Int,
     notificationsEnabled: Boolean,
     onNotificationsTap: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    language: String = "en",
+    userName: String = "",
+    onStreakBadgeTap: () -> Unit = {}
 ) {
     val isDark = AppColors.isDark
     val accent = AppColors.accentColorOptions[accentColorIndex]
 
-    val titleText = when (currentIndex) {
-        0 -> "HOME"
-        1 -> "HEATMAP"
-        2 -> "ANALYTICS"
-        3 -> "JOURNAL"
-        4 -> "SETTINGS"
-        else -> "STREAKLY"
+    val hour = remember { java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY) }
+    val displayName = if (userName.isBlank()) {
+        when (language) {
+            "hi" -> "वहाँ"
+            "mr" -> "तेथे"
+            else -> "there"
+        }
+    } else userName
+
+    val greeting = remember(hour, language, displayName) {
+        when (language) {
+            "hi" -> when {
+                hour in 0..11 -> "सुप्रभात, $displayName"
+                hour in 12..16 -> "नमस्कार, $displayName"
+                else -> "शुभ संध्या, $displayName"
+            }
+            "mr" -> when {
+                hour in 0..11 -> "शुभ सकाळ, $displayName"
+                hour in 12..16 -> "नमस्कार, $displayName"
+                else -> "शुभ संध्याकाळ, $displayName"
+            }
+            else -> when {
+                hour in 0..11 -> "Good morning, $displayName"
+                hour in 12..16 -> "Good afternoon, $displayName"
+                else -> "Good evening, $displayName"
+            }
+        }
     }
 
     Column(
@@ -70,28 +94,55 @@ fun AppHeader(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp)
+                .height(68.dp)
                 .padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // ── LEFT: Bold Title ──
+            // ── LEFT: Bold Title / Greeting ──
             Box(
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.CenterStart
             ) {
                 AnimatedContent(
-                    targetState = titleText,
+                    targetState = currentIndex,
                     transitionSpec = {
                         fadeIn() togetherWith fadeOut()
                     },
                     label = "TitleAnimation"
-                ) { targetTitle ->
-                    Text(
-                        text = targetTitle,
-                        style = AppTextStyles.screenTitle(
-                            if (isDark) AppColors.textPrimary else Color(0xFF0D0D0D)
+                ) { targetIndex ->
+                    val textColor = if (isDark) AppColors.textPrimary else Color(0xFF0D0D0D)
+                    if (targetIndex == 0) {
+                        Column {
+                            Text(
+                                text = greeting,
+                                style = AppTextStyles.screenTitle(textColor).copy(
+                                    fontSize = com.example.core.utils.Responsive.fp(19f),
+                                    fontWeight = FontWeight.Black
+                                )
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = com.example.core.utils.DateUtils.getFormattedDate(com.example.core.utils.DateUtils.getTodayKey(), language),
+                                style = AppTextStyles.caption.copy(
+                                    color = AppColors.textSecondary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = com.example.core.utils.Responsive.fp(11f)
+                                )
+                            )
+                        }
+                    } else {
+                        val titleText = when (targetIndex) {
+                            1 -> if (language == "hi") "कैलेंडर" else if (language == "mr") "कॅलेंडर" else "HEATMAP"
+                            2 -> if (language == "hi") "आंकड़े" else if (language == "mr") "आकडेवारी" else "ANALYTICS"
+                            3 -> if (language == "hi") "सुझाव" else if (language == "mr") "विचार" else "JOURNAL"
+                            4 -> if (language == "hi") "सेटिंग्स" else if (language == "mr") "सेटिंग्ज" else "SETTINGS"
+                            else -> "STREAKLY"
+                        }
+                        Text(
+                            text = titleText,
+                            style = AppTextStyles.screenTitle(textColor)
                         )
-                    )
+                    }
                 }
             }
 
@@ -116,6 +167,8 @@ fun AppHeader(
                     .background(if (isDark) AppColors.bgTertiary else Color.White)
                     .clickable {
                         com.example.core.utils.SoundService.playTap()
+                        com.example.core.utils.HapticService.selectionClick()
+                        onStreakBadgeTap()
                     },
                 contentAlignment = Alignment.Center
             ) {
