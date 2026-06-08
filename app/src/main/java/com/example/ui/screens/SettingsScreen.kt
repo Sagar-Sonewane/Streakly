@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,6 +67,7 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showAccentDialog by remember { mutableStateOf(false) }
     var showLangDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val getLabel = { en: String, hi: String, mr: String ->
         when (language) {
@@ -90,13 +92,14 @@ fun SettingsScreen(
         else -> "English"
     }
 
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .background(AppColors.bgPrimary),
-        contentPadding = PaddingValues(top = 16.dp, bottom = Responsive.h(12f)),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .background(AppColors.bgPrimary),
+            contentPadding = PaddingValues(top = 16.dp, bottom = Responsive.h(12f)),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
         // Group 1: APPEARANCE STYLE
         item {
             SettingsGroupCard(
@@ -118,17 +121,45 @@ fun SettingsScreen(
 
                     Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.border))
 
-                    SettingsRow(
-                        icon = Icons.Default.Settings,
-                        iconColor = accentColor,
-                        title = getLabel("Theme Mode", "थीम का प्रकार", "थीम पर्याय"),
-                        subtitle = activeThemeName,
-                        onClick = {
-                            com.example.core.utils.SoundService.playTap()
-                            com.example.core.utils.HapticService.selectionClick()
-                            showThemeDialog = true
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Theme Mode",
+                                tint = accentColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = getLabel("Theme Mode", "थीम का प्रकार", "थीम पर्याय"),
+                                style = AppTextStyles.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = AppColors.textPrimary
+                                )
+                            )
                         }
-                    )
+                        ThemeModeSelector(
+                            currentThemeModeIndex = settingsState.themeModeIndex,
+                            onThemeModeSelected = { index ->
+                                val sharedPrefs = context.getSharedPreferences("streakly_prefs", Context.MODE_PRIVATE)
+                                when (index) {
+                                    1 -> sharedPrefs.edit().putString("theme_mode", "light").apply()
+                                    2 -> sharedPrefs.edit().putString("theme_mode", "dark").apply()
+                                    0 -> sharedPrefs.edit().remove("theme_mode").apply()
+                                }
+                                settingsProvider.updateThemeModeIndex(index)
+                            },
+                            accentColor = accentColor,
+                            getLabel = getLabel
+                        )
+                    }
                     
                     Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(AppColors.border))
 
@@ -331,127 +362,144 @@ fun SettingsScreen(
     }
 
     // Popup choices selectors logic
-    if (showThemeDialog) {
-        Dialog(onDismissRequest = { showThemeDialog = false }) {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = AppColors.bgSecondary),
-                shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth().border(1.dp, AppColors.border, RoundedCornerShape(24.dp))
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = getLabel("Select Theme Mode", "थीम चुनें", "थीम निवडा"),
-                        style = AppTextStyles.headingMedium.copy(color = accentColor, fontSize = 20.sp, fontWeight = FontWeight.Black)
-                    )
 
-                    val options = listOf(
-                        Pair(2, getLabel("Dark Mode", "डार्क मोड", "गडद मोड")),
-                        Pair(1, getLabel("Light Mode", "लाइट मोड", "प्रकाश मोड")),
-                        Pair(0, getLabel("System Default", "सिस्टम डिफ़ॉल्ट", "सिस्टम पर्याय"))
-                    )
-
-                    options.forEach { (index, label) ->
-                        val isSelected = settingsState.themeModeIndex == index
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSelected) accentColor.copy(alpha = 0.12f) else Color.Transparent)
-                                .clickable {
-                                    com.example.core.utils.SoundService.playToggle()
-                                    com.example.core.utils.HapticService.selectionClick()
-                                    settingsProvider.updateThemeModeIndex(index)
-                                    showThemeDialog = false
-                                }
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = label,
-                                style = AppTextStyles.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isSelected) accentColor else AppColors.textPrimary
-                                )
-                            )
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = "Selected",
-                                    tint = accentColor,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     if (showAccentDialog) {
         Dialog(onDismissRequest = { showAccentDialog = false }) {
             Card(
-                colors = CardDefaults.cardColors(containerColor = AppColors.bgSecondary),
+                colors = CardDefaults.cardColors(containerColor = AppColors.bgCard),
                 shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth().border(1.dp, AppColors.border, RoundedCornerShape(24.dp))
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, AppColors.border, RoundedCornerShape(24.dp))
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 ) {
-                    Text(
-                        text = getLabel("Select Accent Color", "रंग चुनें", "रंग निवडा"),
-                        style = AppTextStyles.headingMedium.copy(color = accentColor, fontSize = 20.sp, fontWeight = FontWeight.Black)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = getLabel("Accent Color", "मुख्य रंग", "मुख्य रंग"),
+                            style = AppTextStyles.headingMedium.copy(
+                                color = AppColors.textPrimary,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                        )
+                        IconButton(
+                            onClick = {
+                                com.example.core.utils.SoundService.playTap()
+                                com.example.core.utils.HapticService.selectionClick()
+                                showAccentDialog = false
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = AppColors.textPrimary
+                            )
+                        }
+                    }
 
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        AppColors.accentColorOptions.forEachIndexed { index, color ->
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        for (index in 0 until AppColors.accentOptions.size) {
+                            val option = AppColors.accentOptions[index]
                             val isSelected = index == accentColorIndex
-                            val name = AppColors.accentNames.getOrNull(index) ?: "Color $index"
+                            val color = option.primary
+                            
+                            val displayName = when (index) {
+                                0 -> getLabel("Orange", "नारंगी", "नारिंगी")
+                                1 -> getLabel("Gold", "सुनहरा", "सोनेरी")
+                                2 -> getLabel("Pink", "गुलाबी", "गुलाबी")
+                                3 -> getLabel("Purple", "बैंगनी", "जांभळा")
+                                4 -> getLabel("Cyan", "स्यान", "स्यान")
+                                5 -> getLabel("Green", "हरा", "हिरवा")
+                                else -> option.name
+                            }
+
+                            val rowBg by animateColorAsState(
+                                targetValue = if (isSelected) AppColors.bgSecondary else Color.Transparent,
+                                label = "accentRowBg_$index"
+                            )
+
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (isSelected) color.copy(alpha = 0.12f) else Color.Transparent)
+                                    .height(IntrinsicSize.Min)
+                                    .background(rowBg)
                                     .clickable {
                                         com.example.core.utils.SoundService.playTap()
-                                        com.example.core.utils.HapticService.selectionClick()
+                                        com.example.core.utils.HapticService.confirm()
+
+                                        val selectedOption = AppColors.accentOptions[index]
+                                        val sharedPrefs = context.getSharedPreferences("streakly_prefs", Context.MODE_PRIVATE)
+                                        sharedPrefs.edit().putString("accent_color", selectedOption.hex).apply()
+
                                         settingsProvider.updateAccentColor(index)
                                         showAccentDialog = false
+
+                                        scope.launch {
+                                            val message = when (language) {
+                                                "hi" -> "थीम अपडेट की गई! $displayName"
+                                                "mr" -> "थीम अपडेट केली! $displayName"
+                                                else -> "Theme updated! $displayName"
+                                            }
+                                            snackbarHostState.showSnackbar(message = message)
+                                        }
                                     }
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(3.dp)
+                                        .fillMaxHeight()
+                                        .background(if (isSelected) color else Color.Transparent)
+                                )
+
                                 Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(start = 17.dp, end = 20.dp, top = 16.dp, bottom = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(24.dp)
-                                            .clip(CircleShape)
-                                            .background(color)
+                                            .size(32.dp)
+                                            .background(color, CircleShape)
                                     )
+
+                                    Spacer(modifier = Modifier.width(16.dp))
+
                                     Text(
-                                        text = name,
+                                        text = displayName,
                                         style = AppTextStyles.titleMedium.copy(
+                                            color = AppColors.textPrimary,
                                             fontWeight = FontWeight.Bold,
-                                            color = if (isSelected) AppColors.getLegibleColor(color) else AppColors.textPrimary
+                                            fontSize = 16.sp
+                                        ),
+                                        modifier = Modifier.weight(1f)
+                                    )
+
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = "Selected",
+                                            tint = color,
+                                            modifier = Modifier.size(24.dp)
                                         )
-                                    )
-                                }
-                                if (isSelected) {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = "Selected",
-                                        tint = color,
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                    } else {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(24.dp)
+                                                .border(2.dp, AppColors.textSecondary.copy(alpha = 0.4f), CircleShape)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -575,6 +623,14 @@ fun SettingsScreen(
                     showResetDatabaseDialog = false
                 }
             }
+        )
+    }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp)
         )
     }
 }
@@ -898,9 +954,9 @@ fun ThemeModeSelector(
     getLabel: (String, String, String) -> String
 ) {
     val options = listOf(
-        Triple(2, Icons.Default.DarkMode, getLabel("Dark", "डार्क", "गडद")),
-        Triple(1, Icons.Default.LightMode, getLabel("Light", "लाइट", "प्रकाश")),
-        Triple(0, Icons.Default.Settings, getLabel("System", "सिस्टम", "सिस्टम"))
+        Triple(1, getLabel("Light", "लाइट", "प्रकाश"), "☀️"),
+        Triple(2, getLabel("Dark", "डार्क", "गडद"), "🌙"),
+        Triple(0, getLabel("System", "सिस्टम", "सिस्टम"), "📱")
     )
 
     Row(
@@ -916,8 +972,9 @@ fun ThemeModeSelector(
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        options.forEach { (index, icon, label) ->
+        options.forEach { (index, label, emoji) ->
             val isSelected = currentThemeModeIndex == index
+            val textAndEmoji = "$emoji $label"
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -928,31 +985,20 @@ fun ThemeModeSelector(
                         com.example.core.utils.HapticService.selectionClick()
                         onThemeModeSelected(index)
                     }
-                    .padding(vertical = Responsive.sp(8f))
+                    .padding(vertical = 12.dp)
                     .testTag("theme_mode_selector_$index"),
                 contentAlignment = Alignment.Center
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = label,
-                        modifier = Modifier.size(Responsive.sp(18f)),
-                        tint = if (isSelected) Color.Black else AppColors.textHint
+                Text(
+                    text = textAndEmoji,
+                    style = AppTextStyles.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = if (isSelected) Color.Black else AppColors.textSecondary
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = label,
-                        style = AppTextStyles.caption.copy(
-                            fontSize = Responsive.fp(10f),
-                            fontWeight = FontWeight.Bold,
-                            color = if (isSelected) Color.Black else AppColors.textHint
-                        )
-                    )
-                }
+                )
             }
         }
     }
 }
+
+

@@ -94,6 +94,54 @@ object HapticService {
         }
     }
 
+    fun celebrate() {
+        if (!shouldVibrate()) return
+        val v = vibrator ?: return
+        if (!v.hasVibrator()) return
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                v.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 80, 40, 80), -1))
+            } else {
+                @Suppress("DEPRECATION")
+                v.vibrate(longArrayOf(0, 80, 40, 80), -1)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun celebrateMilestone() {
+        if (!shouldVibrate()) return
+        val v = vibrator ?: return
+        if (!v.hasVibrator()) return
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                v.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100, 50, 100, 50, 200), -1))
+            } else {
+                @Suppress("DEPRECATION")
+                v.vibrate(longArrayOf(0, 100, 50, 100, 50, 200), -1)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun tickHaptic() {
+        if (!shouldVibrate()) return
+        val v = vibrator ?: return
+        if (!v.hasVibrator()) return
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                v.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
+            } else {
+                @Suppress("DEPRECATION")
+                v.vibrate(10)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     // Deprecated legacy aliases to prevent compile breaks during transition
     fun lightImpact() = selectionClick()
     fun mediumImpact() = confirm()

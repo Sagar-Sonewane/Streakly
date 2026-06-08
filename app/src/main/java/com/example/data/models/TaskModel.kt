@@ -15,7 +15,12 @@ data class TaskModel(
     val createdAt: Long,  // timestamp
     val frequency: String = "daily",     // 'daily' | 'once' | 'weekly'
     val weekDaysRaw: String = "",        // Used only when frequency == 'weekly', comma-separated: "1,2,3"
-    val importance: String = "regular"   // 'regular' | 'moderate' | 'priority'
+    val importance: String = "regular",   // 'regular' | 'moderate' | 'priority'
+    val emoji: String = "🎯",
+    val reminderHour: Int? = null,
+    val reminderMinute: Int? = null,
+    val reminderEnabled: Boolean = false,
+    val difficulty: String = "Medium"     // 'Low' | 'Medium' | 'High'
 ) {
     val weekDays: List<Int>
         get() = if (weekDaysRaw.isBlank()) emptyList() else weekDaysRaw.split(",").mapNotNull { it.toIntOrNull() }

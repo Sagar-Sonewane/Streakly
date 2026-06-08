@@ -5,6 +5,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.Composable
 
 object AppTextStyles {
     // Modern styled design system typography scale
@@ -70,20 +71,20 @@ object AppTextStyles {
     )
 
     // Backward compatibility getters to keep existing screens functioning flawlessly
-    val displayLarge: TextStyle get() = statNumber(AppColors.textPrimary)
-    val headingLarge: TextStyle get() = screenTitle(AppColors.textPrimary)
-    val headingMedium: TextStyle get() = statMedium(AppColors.textPrimary)
-    val titleLarge: TextStyle get() = sectionHeader(AppColors.textPrimary)
-    val titleMedium: TextStyle get() = cardTitle(AppColors.textPrimary)
-    val bodyLarge: TextStyle get() = body(AppColors.textPrimary)
-    val bodyMedium: TextStyle get() = body(AppColors.textSecondary)
-    val bodySmall: TextStyle get() = label(AppColors.textSecondary)
-    val actionButton: TextStyle get() = TextStyle(
+    val displayLarge: TextStyle @Composable get() = statNumber(AppColors.textPrimary)
+    val headingLarge: TextStyle @Composable get() = screenTitle(AppColors.textPrimary)
+    val headingMedium: TextStyle @Composable get() = statMedium(AppColors.textPrimary)
+    val titleLarge: TextStyle @Composable get() = sectionHeader(AppColors.textPrimary)
+    val titleMedium: TextStyle @Composable get() = cardTitle(AppColors.textPrimary)
+    val bodyLarge: TextStyle @Composable get() = body(AppColors.textPrimary)
+    val bodyMedium: TextStyle @Composable get() = body(AppColors.textSecondary)
+    val bodySmall: TextStyle @Composable get() = label(AppColors.textSecondary)
+    val actionButton: TextStyle @Composable get() = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Bold,
         fontSize = 15.sp,
         letterSpacing = 1.sp,
         color = AppColors.textPrimary
     )
-    val caption: TextStyle get() = hint(AppColors.textHint)
+    val caption: TextStyle @Composable get() = hint(AppColors.textHint)
 }

@@ -130,24 +130,48 @@ class TaskProvider(
         colorIndex: Int,
         frequency: String = "daily",
         weekDaysRaw: String = "",
-        importance: String = "regular"
+        importance: String = "regular",
+        emoji: String = "🎯",
+        reminderHour: Int? = null,
+        reminderMinute: Int? = null,
+        reminderEnabled: Boolean = false,
+        difficulty: String = "Medium"
     ) {
         viewModelScope.launch {
             val dateKey = _currentDateKey.value
+            val resolvedColorIdx = when (importance) {
+                "regular" -> 2
+                "moderate" -> 4
+                else -> 0
+            }
             val newTask = TaskModel(
                 id = UUID.randomUUID().toString(),
                 title = title,
                 description = description,
                 timeLabel = timeLabel,
-                colorIndex = colorIndex,
+                colorIndex = resolvedColorIdx,
                 isCompleted = false,
                 dateKey = dateKey,
                 createdAt = System.currentTimeMillis(),
                 frequency = frequency,
                 weekDaysRaw = weekDaysRaw,
-                importance = importance
+                importance = importance,
+                emoji = emoji,
+                reminderHour = reminderHour,
+                reminderMinute = reminderMinute,
+                reminderEnabled = reminderEnabled,
+                difficulty = difficulty
             )
             taskRepository.insertTask(newTask)
+            if (reminderEnabled && reminderHour != null && reminderMinute != null) {
+                com.example.core.utils.NotificationHelper.scheduleTaskNotification(
+                    taskId = newTask.id,
+                    taskName = newTask.title,
+                    taskEmoji = newTask.emoji,
+                    hour = reminderHour,
+                    minute = reminderMinute
+                )
+            }
         }
     }
 
@@ -164,7 +188,23 @@ class TaskProvider(
 
     fun updateTask(task: TaskModel) {
         viewModelScope.launch {
-            taskRepository.insertTask(task)
+            val resolvedColorIdx = when (task.importance) {
+                "regular" -> 2
+                "moderate" -> 4
+                else -> 0
+            }
+            val updatedTask = task.copy(colorIndex = resolvedColorIdx)
+            taskRepository.insertTask(updatedTask)
+            com.example.core.utils.NotificationHelper.cancelTaskNotification(task.id)
+            if (task.reminderEnabled && task.reminderHour != null && task.reminderMinute != null) {
+                com.example.core.utils.NotificationHelper.scheduleTaskNotification(
+                    taskId = task.id,
+                    taskName = task.title,
+                    taskEmoji = task.emoji,
+                    hour = task.reminderHour,
+                    minute = task.reminderMinute
+                )
+            }
         }
     }
 
@@ -172,6 +212,7 @@ class TaskProvider(
         viewModelScope.launch {
             taskRepository.deleteTask(id)
             dailyCompletionRepository.deleteCompletionsForTask(id)
+            com.example.core.utils.NotificationHelper.cancelTaskNotification(id)
         }
     }
 

@@ -76,11 +76,25 @@ import kotlinx.coroutines.launch
 import com.example.core.utils.Responsive
 import com.example.core.utils.Responsive.Init
 
+import androidx.navigation.navigation
+import com.example.ui.screens.MilestoneCelebrationScreen
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.core.tween
+import com.example.ui.screens.OnboardingSplashScreen
+import com.example.ui.screens.OnboardingWelcomeSlides
+import com.example.ui.screens.OnboardingUsernameSetup
+import com.example.ui.screens.OnboardingNotificationPermission
+import com.example.ui.screens.OnboardingSetAlertTime
+import com.example.ui.screens.OnboardingFirstHabitSetup
+import com.example.ui.screens.OnboardingYouAreAllSet
+
 @OptIn(ExperimentalAnimationApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun AppNavHost(
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    startDestination: String = "onboarding"
 ) {
     Responsive.Init()
     val context = LocalContext.current
@@ -89,9 +103,6 @@ fun AppNavHost(
     }
     var userName by remember {
         mutableStateOf(sharedPrefs.getString("user_name", "") ?: "")
-    }
-    var showFirstTimeNameDialog by remember {
-        mutableStateOf(sharedPrefs.getString("user_name", null) == null)
     }
 
     val settingsProvider = Providers.getSettings()
@@ -107,10 +118,7 @@ fun AppNavHost(
 
     // Play milestone fanfare sound in response to unlocking
     LaunchedEffect(milestoneToClaim) {
-        if (milestoneToClaim != null) {
-            com.example.core.utils.SoundService.playSuccess()
-            com.example.core.utils.HapticService.strongClick()
-        }
+        // Audio and haptics handled inside MilestoneCelebrationScreen
     }
 
     // Dynamic label helper
@@ -129,11 +137,9 @@ fun AppNavHost(
 
         // Render milestone completion overlay if user has unlocked a new milestone
         milestoneToClaim?.let { milestone ->
-            MilestonePopup(
+            MilestoneCelebrationScreen(
                 milestone = milestone,
-                language = currentLanguage,
-                onClaimClick = { streakProvider.claimMilestone(milestone) },
-                accentColor = AppColors.accentColorOptions[accentColorIndex]
+                onDismiss = { streakProvider.claimMilestone(milestone) }
             )
         }
 
@@ -145,11 +151,117 @@ fun AppNavHost(
 
         NavHost(
             navController = navController,
-            startDestination = "splash",
+            startDestination = startDestination,
             modifier = modifier
                 .fillMaxSize()
                 .background(AppColors.bgPrimary)
         ) {
+            navigation(
+                startDestination = "onboarding_splash",
+                route = "onboarding"
+            ) {
+                composable(
+                    route = "onboarding_splash",
+                    exitTransition = { fadeOut(animationSpec = tween(400)) }
+                ) {
+                    OnboardingSplashScreen(
+                        onNavigateNext = {
+                            navController.navigate("onboarding_welcome") {
+                                popUpTo("onboarding_splash") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
+                composable(
+                    route = "onboarding_welcome",
+                    enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+                ) {
+                    OnboardingWelcomeSlides(
+                        onNavigateNext = {
+                            navController.navigate("onboarding_username")
+                        },
+                        onSkip = {
+                            navController.navigate("onboarding_username")
+                        }
+                    )
+                }
+
+                composable(
+                    route = "onboarding_username",
+                    enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+                ) {
+                    OnboardingUsernameSetup(
+                        onNavigateNext = {
+                            navController.navigate("onboarding_notifications")
+                        }
+                    )
+                }
+
+                composable(
+                    route = "onboarding_notifications",
+                    enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+                ) {
+                    OnboardingNotificationPermission(
+                        onNavigateNext = {
+                            navController.navigate("onboarding_alert_time")
+                        }
+                    )
+                }
+
+                composable(
+                    route = "onboarding_alert_time",
+                    enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+                ) {
+                    OnboardingSetAlertTime(
+                        onNavigateNext = {
+                            navController.navigate("onboarding_habit_setup")
+                        }
+                    )
+                }
+
+                composable(
+                    route = "onboarding_habit_setup",
+                    enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+                    exitTransition = { slideOutHorizontally(targetOffsetX = { -it }) + fadeOut() },
+                    popEnterTransition = { slideInHorizontally(initialOffsetX = { -it }) + fadeIn() },
+                    popExitTransition = { slideOutHorizontally(targetOffsetX = { it }) + fadeOut() }
+                ) {
+                    OnboardingFirstHabitSetup(
+                        onNavigateNext = {
+                            navController.navigate("onboarding_all_set")
+                        }
+                    )
+                }
+
+                composable(
+                    route = "onboarding_all_set",
+                    enterTransition = { slideInHorizontally(initialOffsetX = { it }) + fadeIn() },
+                    exitTransition = { fadeOut(animationSpec = tween(400)) }
+                ) {
+                    OnboardingYouAreAllSet(
+                        onNavigateNext = {
+                            userName = sharedPrefs.getString("user_name", "") ?: ""
+                            navController.navigate("main") {
+                                popUpTo("onboarding") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+            }
+
             composable("splash") {
                 com.example.ui.screens.SplashScreen(
                     accentColorIndex = accentColorIndex,
@@ -169,20 +281,6 @@ fun AppNavHost(
                     coroutineScope.launch {
                         pagerState.animateScrollToPage(0)
                     }
-                }
-
-                if (showFirstTimeNameDialog) {
-                    NameInputDialog(
-                        initialName = userName,
-                        accentColor = AppColors.accentColorOptions[accentColorIndex],
-                        getLabel = getLabel,
-                        onDismiss = null,
-                        onConfirm = { newName ->
-                            sharedPrefs.edit().putString("user_name", newName).apply()
-                            userName = newName
-                            showFirstTimeNameDialog = false
-                        }
-                    )
                 }
 
                 Scaffold(

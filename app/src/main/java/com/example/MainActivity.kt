@@ -15,8 +15,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val sharedPrefs = getSharedPreferences("streakly_prefs", MODE_PRIVATE)
+        val onboardingComplete = sharedPrefs.getBoolean("onboarding_complete", false)
+        val startDestination = if (onboardingComplete) "main" else "onboarding"
         setContent {
-            AppNavHost(modifier = Modifier.fillMaxSize())
+            AppNavHost(
+                modifier = Modifier.fillMaxSize(),
+                startDestination = startDestination
+            )
         }
     }
 

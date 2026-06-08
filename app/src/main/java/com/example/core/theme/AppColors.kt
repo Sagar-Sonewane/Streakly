@@ -1,75 +1,113 @@
 package com.example.core.theme
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 
+data class AccentColorInfo(
+    val name: String,
+    val hex: String,
+    val primary: Color,
+    val lighter: Color,
+    val emoji: String
+)
+
 object AppColors {
     var isDark: Boolean by mutableStateOf(true)
 
-    val bgPrimary: Color get() = if (isDark) Color(0xFF080B14) else Color(0xFFF2F3F7)
-    val bgSecondary: Color get() = if (isDark) Color(0xFF0F1320) else Color(0xFFFFFFFF)
-    val bgTertiary: Color get() = if (isDark) Color(0xFF161C2E) else Color(0xFFEBEDF5)
-    val bgCard: Color get() = if (isDark) Color(0xFF1A2035) else Color(0xFFFFFFFF)
-    val bgElevated: Color get() = if (isDark) Color(0xFF212843) else Color(0xFFE2E5F0)
+    val bgPrimary: Color @Composable get() = LocalBgPrimary.current
+    val bgSecondary: Color @Composable get() = LocalBgSecondary.current
+    val bgTertiary: Color @Composable get() = LocalBgTertiary.current
+    val bgCard: Color @Composable get() = LocalBgCard.current
+    val bgElevated: Color @Composable get() = LocalBgElevated.current
 
-    val textPrimary: Color get() = if (isDark) Color(0xFFEAECF5) else Color(0xFF0D0D0D)
-    val textSecondary: Color get() = if (isDark) Color(0xFF8892B0) else Color(0xFF7A7A8C)
-    val textHint: Color get() = if (isDark) Color(0xFF4A5480) else Color(0xFFB0B0C0)
+    val textPrimary: Color @Composable get() = LocalTextPrimary.current
+    val textSecondary: Color @Composable get() = LocalTextSecondary.current
+    val textHint: Color @Composable get() = LocalTextHint.current
 
-    val border: Color get() = if (isDark) Color(0xFF252D45) else Color(0xFFE8E8F0)
+    val border: Color @Composable get() = LocalBorder.current
+
 
     // Accents
-    val accentOrange = Color(0xFFFF6B35)   // Index 0 (Flame Orange)
-    val electricViolet = Color(0xFF6C63FF) // Index 1 (Electric Violet)
-    val cyberTeal = Color(0xFF00D4AA)      // Index 2 (Cyber Teal)
-    val neonGreen = Color(0xFF00C853)      // Index 3 (Neon Green)
-    val goldAmber = Color(0xFFFFAB00)      // Index 4 (Gold Amber)
-    val hotPink = Color(0xFFFF3D71)        // Index 5 (Hot Pink)
+    val accentEmberOrange = Color(0xFFFF5722)
+    val accentRoyalGold = Color(0xFFF9A825)
+    val accentFlamingoPink = Color(0xFFF06292)
+    val accentElectricPurple = Color(0xFF7C4DFF)
+    val accentNeonCyan = Color(0xFF00BCD4)
+    val accentNeonGreen = Color(0xFF00E676)
 
-    // Backward compatibility mappings
-    val red = hotPink
-    val blue = electricViolet
-    val purple = cyberTeal
-    val accentAmber = goldAmber
+    val accentEmberOrangeLighter = Color(0xFFFF7043)
+    val accentRoyalGoldLighter = Color(0xFFFFCA28)
+    val accentFlamingoPinkLighter = Color(0xFFF48FB1)
+    val accentElectricPurpleLighter = Color(0xFF9E6FFF)
+    val accentNeonCyanLighter = Color(0xFF26C6DA)
+    val accentNeonGreenLighter = Color(0xFF69F0AE)
+
+    val accentOptions = listOf(
+        AccentColorInfo("Ember Orange", "#FF5722", accentEmberOrange, accentEmberOrangeLighter, "🔥"),
+        AccentColorInfo("Royal Gold", "#F9A825", accentRoyalGold, accentRoyalGoldLighter, "👑"),
+        AccentColorInfo("Flamingo Pink", "#F06292", accentFlamingoPink, accentFlamingoPinkLighter, "💗"),
+        AccentColorInfo("Electric Purple", "#7C4DFF", accentElectricPurple, accentElectricPurpleLighter, "⚡"),
+        AccentColorInfo("Neon Cyan", "#00BCD4", accentNeonCyan, accentNeonCyanLighter, "🌊"),
+        AccentColorInfo("Neon Green", "#00E676", accentNeonGreen, accentNeonGreenLighter, "🍀")
+    )
+
+    val red = Color(0xFFFF3D71)
+    val blue = Color(0xFF1565C0)
+    val purple = Color(0xFF5C6BC0)
+    val accentAmber = accentRoyalGold
+    val accentOrange = accentEmberOrange
+    val electricViolet = Color(0xFF6C63FF)
+    val cyberTeal = Color(0xFF00D4AA)
+    val neonGreen = Color(0xFF00C853)
+    val goldAmber = Color(0xFFFFAB00)
+    val hotPink = Color(0xFFFF3D71)
 
     // Accent options by index
     val accentColorOptions = listOf(
-        accentOrange,   // Index 0
-        electricViolet, // Index 1
-        cyberTeal,      // Index 2
-        neonGreen,      // Index 3
-        goldAmber,      // Index 4
-        hotPink         // Index 5
+        accentEmberOrange,      // Index 0
+        accentRoyalGold,        // Index 1
+        accentFlamingoPink,     // Index 2
+        accentElectricPurple,   // Index 3
+        accentNeonCyan,         // Index 4
+        accentNeonGreen         // Index 5
     )
 
     val accentNames = listOf(
-        "Orange",
-        "Violet",
-        "Teal",
-        "Green",
-        "Amber",
-        "Pink"
+        "Ember Orange",
+        "Royal Gold",
+        "Flamingo Pink",
+        "Electric Purple",
+        "Neon Cyan",
+        "Neon Green"
     )
+
+    val accentColor: Color @Composable get() = LocalAccentColor.current
+    val accentColorLighter: Color @Composable get() = LocalAccentColorLighter.current
 
     val taskCategoryColors: List<Color> get() = if (isDark) {
         listOf(
-            Color(0xFF4A90FF),  // blue
-            Color(0xFF9B59B6),  // purple
-            Color(0xFF2ECC71),  // green
-            Color(0xFFFFB347),  // amber
-            Color(0xFFE74C3C),  // red
-            Color(0xFF1ABC9C)   // teal
+            Color(0xFFFF5722), // Ember Orange
+            Color(0xFF5C6BC0), // Electric Indigo
+            Color(0xFF2E7D52), // Momentum Green
+            Color(0xFF1565C0), // Sapphire Blue
+            Color(0xFFF9A825), // Royal Gold
+            Color(0xFFFF3D71), // Hot Pink
+            Color(0xFF00D4AA), // Cyber Teal
+            Color(0xFF00C853)  // Neon Green
         )
     } else {
         listOf(
-            Color(0xFF2B6FD4),  // blue (deeper for light bg)
-            Color(0xFF7B3FA6),  // purple
-            Color(0xFF1A9E55),  // green
-            Color(0xFFCC8800),  // amber
-            Color(0xFFCC2222),  // red
-            Color(0xFF0E8870)   // teal
+            Color(0xFFD84315), // Ember Orange (Darker)
+            Color(0xFF3F51B5), // Electric Indigo (Darker)
+            Color(0xFF1B5E20), // Momentum Green (Darker)
+            Color(0xFF0D47A1), // Sapphire Blue (Darker)
+            Color(0xFFE65100), // Royal Gold (Darker)
+            Color(0xFFC2185B), // Hot Pink (Darker)
+            Color(0xFF004D40), // Cyber Teal (Darker)
+            Color(0xFF1B5E20)  // Neon Green (Darker)
         )
     }
 
@@ -106,12 +144,12 @@ object AppColors {
     fun getLegibleColor(color: Color): Color {
         if (isDark) return color
         return when (color) {
-            accentOrange -> Color(0xFFD84315) // Deep Orange
-            electricViolet -> Color(0xFF4527A0) // Deep Purple/Violet
-            cyberTeal -> Color(0xFF00695C) // Deep Teal
-            neonGreen -> Color(0xFF2E7D32) // Deep Green
-            goldAmber -> Color(0xFFEF6C00) // Deep Amber
-            hotPink -> Color(0xFFC2185B) // Deep Pink
+            accentEmberOrange -> Color(0xFFD84315)
+            accentRoyalGold -> Color(0xFFE65100)
+            accentFlamingoPink -> Color(0xFFC2185B)
+            accentElectricPurple -> Color(0xFF4527A0)
+            accentNeonCyan -> Color(0xFF006064)
+            accentNeonGreen -> Color(0xFF1B5E20)
             else -> color
         }
     }

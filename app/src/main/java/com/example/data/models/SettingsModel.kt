@@ -13,7 +13,7 @@ data class SettingsModel(
     val reminderMinute: Int = 0,
     val soundEnabled: Boolean = true,
     val hapticEnabled: Boolean = true,
-    val themeModeIndex: Int = 2 // 0 = system, 1 = light, 2 = dark
+    val themeModeIndex: Int = 0 // 0 = system, 1 = light, 2 = dark
 ) {
     companion object {
         fun default(): SettingsModel {

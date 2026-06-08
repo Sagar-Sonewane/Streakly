@@ -26,6 +26,21 @@ class ScheduledNotificationBootReceiver : BroadcastReceiver() {
                         )
                         Log.d("BootReceiver", "Notification rescheduled at ${settings.reminderHour}:${settings.reminderMinute}")
                     }
+
+                    // Reschedule active task alarms
+                    val allTasks = app.taskRepository.getAllTasksList()
+                    allTasks.forEach { task ->
+                        if (task.reminderEnabled && task.reminderHour != null && task.reminderMinute != null) {
+                            NotificationHelper.scheduleTaskNotification(
+                                taskId = task.id,
+                                taskName = task.title,
+                                taskEmoji = task.emoji,
+                                hour = task.reminderHour,
+                                minute = task.reminderMinute
+                            )
+                            Log.d("BootReceiver", "Rescheduled alarm for task ${task.title} at ${task.reminderHour}:${task.reminderMinute}")
+                        }
+                    }
                 } catch (e: Exception) {
                     Log.e("BootReceiver", "Error rescheduling notification: ${e.message}")
                 }
