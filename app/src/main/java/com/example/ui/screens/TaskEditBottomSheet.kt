@@ -227,8 +227,8 @@ fun TaskEditBottomSheet(
                 .fillMaxHeight(animatedFraction)
                 .navigationBarsPadding()
         ) {
-            // Segmented Progress Bar
-            SegmentedProgressBar(currentStep = currentStep, accentColor = accentColor)
+            // Unified Step Header & Progress Bar
+            StepHeader(currentStep = currentStep, accentColor = accentColor)
 
             // Step Content
             Box(
@@ -333,20 +333,22 @@ fun TaskEditBottomSheet(
                 if (currentStep > 1) {
                     OutlinedButton(
                         onClick = onBackClick,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = AppColors.textSecondary),
                         border = borderStroke(accentColor = accentColor)
                     ) {
-                        Text(text = "← Back", style = AppTextStyles.actionButton.copy(fontSize = 15.sp))
+                        Text(text = "Back", style = AppTextStyles.actionButton.copy(fontSize = 15.sp))
                     }
                 }
 
                 val nextButtonEnabled = currentStep != 1 || title.trim().isNotEmpty()
                 val nextLabel = if (currentStep == 4) {
-                    if (task == null) "Add Habit 🔥" else "Save Changes ✅"
+                    if (task == null) "Add Habit" else "Save Changes"
                 } else {
-                    if (currentStep == 2 && !hasTimeSet && repeatOption == "daily") "Skip" else "Next →"
+                    if (currentStep == 2 && !hasTimeSet && repeatOption == "daily") "Skip" else "Next"
                 }
 
                 Button(
@@ -416,8 +418,16 @@ fun TaskEditBottomSheet(
                         }
                     },
                     enabled = nextButtonEnabled,
-                    modifier = Modifier.weight(2f),
-                    shape = RoundedCornerShape(14.dp),
+                    modifier = if (currentStep > 1) {
+                        Modifier
+                            .weight(1f)
+                            .height(48.dp)
+                    } else {
+                        Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                    },
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = accentColor,
                         contentColor = Color.Black,
@@ -470,7 +480,7 @@ fun TaskEditBottomSheet(
                     .navigationBarsPadding()
             ) {
                 Text(
-                    text = "Choose Emoji 🎯",
+                    text = "Choose Emoji",
                     style = AppTextStyles.titleMedium.copy(fontWeight = FontWeight.Bold, color = accentColor),
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -577,52 +587,70 @@ fun TaskEditBottomSheet(
 private fun borderStroke(accentColor: Color) = androidx.compose.foundation.BorderStroke(1.dp, AppColors.border)
 
 @Composable
-fun SegmentedProgressBar(currentStep: Int, accentColor: Color) {
-    val infiniteTransition = rememberInfiniteTransition()
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.85f,
-        targetValue = 1.0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        )
-    )
+fun StepHeader(currentStep: Int, accentColor: Color) {
+    val stepTitle = when (currentStep) {
+        1 -> "Habit Identity"
+        2 -> "Schedule & Reminder"
+        3 -> "Habit Priority"
+        else -> "Confirm Habit"
+    }
+    val stepSub = when (currentStep) {
+        1 -> "Give your habit a name and notes"
+        2 -> "Set your repeat frequency and alerts"
+        3 -> "Select the priority level for tracking"
+        else -> "Review and save your new habit"
+    }
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Row(
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Step $currentStep of 4",
+                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                color = AppColors.textHint
+            )
+            Text(
+                text = stepTitle,
+                style = AppTextStyles.label(accentColor).copy(fontWeight = FontWeight.Black, fontSize = 13.sp)
+            )
+        }
+        
+        Text(
+            text = stepSub,
+            style = AppTextStyles.bodyMedium.copy(fontSize = 14.sp),
+            color = AppColors.textSecondary
+        )
+        
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        // Progress bar indicator
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             for (step in 1..4) {
                 val isActive = step == currentStep
                 val isCompleted = step < currentStep
                 val color = if (isActive || isCompleted) accentColor else AppColors.bgSecondary
-                val alpha = if (isActive) pulseAlpha else 1.0f
-
+                val alpha = if (isActive) 1.0f else 0.4f
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(6.dp)
-                        .clip(RoundedCornerShape(3.dp))
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
                         .graphicsLayer(alpha = alpha)
                         .background(color)
                 )
             }
         }
-
-        Spacer(modifier = Modifier.width(6.dp))
-
-        Text(
-            text = "Step $currentStep of 4",
-            color = AppColors.textHint,
-            style = AppTextStyles.caption.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        )
     }
 }
 
@@ -642,17 +670,7 @@ fun Step1Identity(
         focusRequester.requestFocus()
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text(
-            text = "What's the habit? 🎯",
-            style = AppTextStyles.headingMedium.copy(fontWeight = FontWeight.Black)
-        )
-        Text(
-            text = "Give it a name and personality",
-            style = AppTextStyles.bodyMedium,
-            color = AppColors.textSecondary
-        )
-
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -660,15 +678,15 @@ fun Step1Identity(
         ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(44.dp)
                     .graphicsLayer(scaleX = emojiScale, scaleY = emojiScale)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(AppColors.bgSecondary)
+                    .background(AppColors.bgTertiary)
                     .border(1.dp, AppColors.border, RoundedCornerShape(12.dp))
                     .clickable { onEmojiButtonTap() },
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = selectedEmoji, fontSize = 24.sp)
+                Text(text = selectedEmoji, fontSize = 22.sp)
             }
 
             Column(modifier = Modifier.weight(1f)) {
@@ -679,6 +697,7 @@ fun Step1Identity(
                             onTitleChange(it)
                         }
                     },
+                    label = { Text("Habit Name", color = AppColors.textSecondary) },
                     placeholder = { Text("e.g. Morning Run", color = AppColors.textHint) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
@@ -687,7 +706,7 @@ fun Step1Identity(
                         focusedTextColor = AppColors.textPrimary,
                         unfocusedTextColor = AppColors.textPrimary
                     ),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester)
@@ -711,7 +730,8 @@ fun Step1Identity(
         OutlinedTextField(
             value = description,
             onValueChange = { onDescriptionChange(it) },
-            placeholder = { Text("Add a note... (optional)", color = AppColors.textHint) },
+            label = { Text("Notes (optional)", color = AppColors.textSecondary) },
+            placeholder = { Text("Add details or reminders here...", color = AppColors.textHint) },
             maxLines = 2,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = LocalAccentColor.current,
@@ -719,7 +739,7 @@ fun Step1Identity(
                 focusedTextColor = AppColors.textPrimary,
                 unfocusedTextColor = AppColors.textPrimary
             ),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -751,187 +771,165 @@ fun Step2Schedule(
     }
 
     val presets = listOf(
-        Triple("🌅 6AM", 6, true),
-        Triple("🌄 7AM", 7, true),
-        Triple("☀️ 8AM", 8, true),
-        Triple("🌞 12PM", 12, false),
-        Triple("🌆 6PM", 6, false),
-        Triple("🌙 9PM", 9, false)
+        Triple("6 AM", 6, true),
+        Triple("7 AM", 7, true),
+        Triple("8 AM", 8, true),
+        Triple("12 PM", 12, false),
+        Triple("6 PM", 6, false),
+        Triple("9 PM", 9, false)
     )
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = "When & how often? ⏰",
-            style = AppTextStyles.headingMedium.copy(fontWeight = FontWeight.Black)
-        )
-        Text(
-            text = "Set your schedule and reminders",
-            style = AppTextStyles.bodyMedium,
-            color = AppColors.textSecondary
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Section 1: Reminder Time
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Reminder Time",
+                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                color = AppColors.textHint
+            )
 
-        // Time Selection Card
-        Card(
-            colors = CardDefaults.cardColors(containerColor = AppColors.bgTertiary),
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, AppColors.border, RoundedCornerShape(16.dp))
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            Card(
+                colors = CardDefaults.cardColors(containerColor = AppColors.bgTertiary),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, AppColors.border, RoundedCornerShape(16.dp))
             ) {
-                // Tappable Card Title
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            if (!hasTimeSet) {
-                                onHasTimeSetChange(true)
-                            }
-                            onShowClockInlineChange(!showClockInline)
-                        }
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        text = "Time Alert",
-                        style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold)
-                    )
-                    Text(
-                        text = if (hasTimeSet) getFormattedTime() else "No time set — tap to add",
-                        color = if (hasTimeSet) accentColor else AppColors.textHint,
-                        style = AppTextStyles.titleMedium.copy(fontWeight = FontWeight.Bold)
-                    )
-                }
-
-                // Inline Wheel Clock & presets
-                AnimatedVisibility(
-                    visible = hasTimeSet && showClockInline,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        HorizontalDivider(color = AppColors.border.copy(alpha = 0.5f))
-
-                        // Quick Presets Row (more compact padding)
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 4.dp)
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            presets.forEach { (lbl, hr, am) ->
-                                val isChosen = hour == hr && minute == 0 && isAM == am
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(20.dp))
-                                        .background(if (isChosen) accentColor else AppColors.bgSecondary)
-                                        .clickable {
-                                            SoundService.playTap()
-                                            HapticService.selectionClick()
-                                            onTimeChange(hr, 0, am)
-                                        }
-                                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                                ) {
-                                    Text(
-                                        text = lbl,
-                                        color = if (isChosen) Color.Black else AppColors.textSecondary,
-                                        style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold)
-                                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (!hasTimeSet) {
+                                    onHasTimeSetChange(true)
                                 }
+                                onShowClockInlineChange(!showClockInline)
                             }
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.AccessTime,
+                                contentDescription = null,
+                                tint = accentColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Daily Alert",
+                                style = AppTextStyles.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                            )
                         }
+                        Text(
+                            text = if (hasTimeSet) getFormattedTime() else "No time set",
+                            color = if (hasTimeSet) accentColor else AppColors.textHint,
+                            style = AppTextStyles.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        )
+                    }
 
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        // Large interactive WheelPicker selectors layout
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(140.dp),
-                            contentAlignment = Alignment.Center
+                    AnimatedVisibility(
+                        visible = hasTimeSet && showClockInline,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            // Highlight band
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(52.dp)
-                                    .background(AppColors.bgPrimary, RoundedCornerShape(8.dp))
-                            )
-
-                            // Top divider line
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(accentColor.copy(alpha = 0.3f))
-                                    .align(Alignment.Center)
-                                    .offset(y = (-26).dp)
-                            )
-
-                            // Bottom divider line
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(1.dp)
-                                    .background(accentColor.copy(alpha = 0.3f))
-                                    .align(Alignment.Center)
-                                    .offset(y = 26.dp)
-                            )
+                            HorizontalDivider(color = AppColors.border.copy(alpha = 0.5f))
 
                             Row(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                val hours = (1..12).map { it.toString().padStart(2, '0') }
-                                val minutes = (0..59).map { it.toString().padStart(2, '0') }
-                                val phases = listOf("AM", "PM")
+                                presets.forEach { (lbl, hr, am) ->
+                                    val isChosen = hour == hr && minute == 0 && isAM == am
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(if (isChosen) accentColor else AppColors.bgSecondary)
+                                            .clickable {
+                                                SoundService.playTap()
+                                                HapticService.selectionClick()
+                                                onTimeChange(hr, 0, am)
+                                            }
+                                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = lbl,
+                                            color = if (isChosen) Color.Black else AppColors.textSecondary,
+                                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold)
+                                        )
+                                    }
+                                }
+                            }
 
-                                WheelPicker(
-                                    items = hours,
-                                    value = hour.toString().padStart(2, '0'),
-                                    onValueChange = { selectedStr ->
-                                        onTimeChange(selectedStr.toInt(), minute, isAM)
-                                    },
-                                    accentColor = accentColor
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(130.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(44.dp)
+                                        .background(AppColors.bgPrimary, RoundedCornerShape(8.dp))
                                 )
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    val hours = (1..12).map { it.toString().padStart(2, '0') }
+                                    val minutes = (0..59).map { it.toString().padStart(2, '0') }
+                                    val phases = listOf("AM", "PM")
 
-                                Text(
-                                    text = ":",
-                                    style = AppTextStyles.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                    modifier = Modifier.padding(horizontal = 8.dp),
-                                    color = AppColors.textSecondary
-                                )
+                                    WheelPicker(
+                                        items = hours,
+                                        value = hour.toString().padStart(2, '0'),
+                                        onValueChange = { selectedStr ->
+                                            onTimeChange(selectedStr.toInt(), minute, isAM)
+                                        },
+                                        accentColor = accentColor
+                                    )
 
-                                WheelPicker(
-                                    items = minutes,
-                                    value = minute.toString().padStart(2, '0'),
-                                    onValueChange = { selectedStr ->
-                                        onTimeChange(hour, selectedStr.toInt(), isAM)
-                                    },
-                                    accentColor = accentColor
-                                )
+                                    Text(
+                                        text = ":",
+                                        style = AppTextStyles.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        modifier = Modifier.padding(horizontal = 12.dp),
+                                        color = AppColors.textSecondary
+                                    )
 
-                                Spacer(modifier = Modifier.width(12.dp))
+                                    WheelPicker(
+                                        items = minutes,
+                                        value = minute.toString().padStart(2, '0'),
+                                        onValueChange = { selectedStr ->
+                                            onTimeChange(hour, selectedStr.toInt(), isAM)
+                                        },
+                                        accentColor = accentColor
+                                    )
 
-                                WheelPicker(
-                                    items = phases,
-                                    value = if (isAM) "AM" else "PM",
-                                    onValueChange = { selectedStr ->
-                                        onTimeChange(hour, minute, selectedStr == "AM")
-                                    },
-                                    accentColor = accentColor
-                                )
+                                    Spacer(modifier = Modifier.width(16.dp))
+
+                                    WheelPicker(
+                                        items = phases,
+                                        value = if (isAM) "AM" else "PM",
+                                        onValueChange = { selectedStr ->
+                                            onTimeChange(hour, minute, selectedStr == "AM")
+                                        },
+                                        accentColor = accentColor
+                                    )
+                                }
                             }
                         }
                     }
@@ -939,108 +937,101 @@ fun Step2Schedule(
             }
         }
 
-        // Notification Switch Row
+        // Section 2: Notification Toggle
         if (hasTimeSet) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(AppColors.bgTertiary)
-                    .border(1.dp, AppColors.border, RoundedCornerShape(16.dp))
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = null,
-                        tint = accentColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "Remind me at this time",
-                        style = AppTextStyles.bodyMedium.copy(fontWeight = FontWeight.Bold)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Notification settings",
+                    style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                    color = AppColors.textHint
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(AppColors.bgTertiary)
+                        .border(1.dp, AppColors.border, RoundedCornerShape(16.dp))
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = accentColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Send reminder alert",
+                            style = AppTextStyles.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+
+                    Switch(
+                        checked = reminderEnabled,
+                        onCheckedChange = {
+                            SoundService.playToggle()
+                            HapticService.selectionClick()
+                            onReminderEnabledChange(it)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.Black,
+                            checkedTrackColor = accentColor,
+                            uncheckedThumbColor = AppColors.textSecondary,
+                            uncheckedTrackColor = AppColors.border
+                        )
                     )
                 }
-
-                Switch(
-                    checked = reminderEnabled,
-                    onCheckedChange = {
-                        SoundService.playToggle()
-                        HapticService.selectionClick()
-                        onReminderEnabledChange(it)
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.Black,
-                        checkedTrackColor = accentColor,
-                        uncheckedThumbColor = AppColors.textSecondary,
-                        uncheckedTrackColor = AppColors.border
-                    )
-                )
             }
         }
 
-        // Repeat Options Wrapped in FlowRow (Fixes cutoff)
-        Text(
-            text = "Repeat Schedule",
-            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold)
-        )
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            val repeatOptions = listOf(
-                Pair("Daily", "daily"),
-                Pair("Weekdays", "weekdays"),
-                Pair("Weekends", "weekends")
-            )
-            val individualDays = listOf(
-                Pair("Mon", 1), Pair("Tue", 2), Pair("Wed", 3),
-                Pair("Thu", 4), Pair("Fri", 5), Pair("Sat", 6), Pair("Sun", 7)
+        // Section 3: Repeat Schedule
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Repeat Schedule",
+                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                color = AppColors.textHint
             )
 
-            repeatOptions.forEach { (lbl, opt) ->
-                val isSelected = repeatOption == opt
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(if (isSelected) accentColor else AppColors.bgSecondary)
-                        .border(
-                            width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) accentColor else AppColors.border,
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                        .clickable {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                val repeatOptions = listOf(
+                    Pair("Daily", "daily"),
+                    Pair("Weekdays", "weekdays"),
+                    Pair("Weekends", "weekends")
+                )
+                val individualDays = listOf(
+                    Pair("Mon", 1), Pair("Tue", 2), Pair("Wed", 3),
+                    Pair("Thu", 4), Pair("Fri", 5), Pair("Sat", 6), Pair("Sun", 7)
+                )
+
+                repeatOptions.forEach { (lbl, opt) ->
+                    val isSelected = repeatOption == opt
+                    ScheduleChip(
+                        text = lbl,
+                        isSelected = isSelected,
+                        onClick = {
                             SoundService.playToggle()
                             HapticService.selectionClick()
                             onRepeatOptionChange(opt)
                             selectedCustomDays.clear()
-                        }
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = lbl,
-                        color = if (isSelected) Color.Black else AppColors.textSecondary,
-                        style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold)
+                        },
+                        accentColor = accentColor
                     )
                 }
-            }
 
-            individualDays.forEach { (lbl, day) ->
-                val isSelected = repeatOption == "custom" && selectedCustomDays.contains(day)
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(if (isSelected) accentColor else AppColors.bgSecondary)
-                        .border(
-                            width = if (isSelected) 1.5.dp else 1.dp,
-                            color = if (isSelected) accentColor else AppColors.border,
-                            shape = RoundedCornerShape(20.dp)
-                        )
-                        .clickable {
+                individualDays.forEach { (lbl, day) ->
+                    val isSelected = repeatOption == "custom" && selectedCustomDays.contains(day)
+                    ScheduleChip(
+                        text = lbl,
+                        isSelected = isSelected,
+                        onClick = {
                             SoundService.playToggle()
                             HapticService.selectionClick()
                             onRepeatOptionChange("custom")
@@ -1051,24 +1042,16 @@ fun Step2Schedule(
                                 }
                             } else {
                                 selectedCustomDays.add(day)
-                                if (selectedCustomDays.size == 7) {
-                                    selectedCustomDays.clear()
-                                    onRepeatOptionChange("daily")
-                                }
                             }
-                        }
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = lbl,
-                        color = if (isSelected) Color.Black else AppColors.textSecondary,
-                        style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold)
+                        },
+                        accentColor = accentColor
                     )
                 }
             }
         }
     }
 }
+
 
 data class PriorityOption(
     val value: String,
@@ -1084,16 +1067,11 @@ fun Step3PriorityAndStyle(
     onImportanceChange: (String) -> Unit,
     accentColor: Color
 ) {
-    val getLabel = { en: String, hi: String, mr: String ->
-        // Return english labels as standard, or resolve based on app state
-        en
-    }
-
     val categories = remember(accentColor) {
         listOf(
-            PriorityOption("regular", "Easy", "🟢", "Low effort, build the habit", Color(0xFF4CAF50)),
-            PriorityOption("moderate", "Medium", "🟡", "Focused and consistent", Color(0xFFFFC107)),
-            PriorityOption("priority", "High", "🔴", "Critical — top priority", accentColor)
+            PriorityOption("regular", "Easy", "", "Low effort, build the habit", Color(0xFF4CAF50)),
+            PriorityOption("moderate", "Medium", "", "Focused and consistent", Color(0xFFFFC107)),
+            PriorityOption("priority", "High", "", "Critical — top priority", accentColor)
         )
     }
 
@@ -1104,16 +1082,6 @@ fun Step3PriorityAndStyle(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = "How important is this? 🔥",
-            style = AppTextStyles.headingMedium.copy(fontWeight = FontWeight.Black)
-        )
-        Text(
-            text = "Select the priority of this habit",
-            style = AppTextStyles.bodyMedium,
-            color = AppColors.textSecondary
-        )
-
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -1134,24 +1102,30 @@ fun Step3PriorityAndStyle(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 100.dp)
+                        .height(72.dp)
                         .graphicsLayer(scaleX = scale, scaleY = scale)
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(cardBg)
                         .border(
                             width = if (isSelected) 2.dp else 1.dp,
                             color = borderCol,
-                            shape = RoundedCornerShape(20.dp)
+                            shape = RoundedCornerShape(12.dp)
                         )
                         .clickable {
                             SoundService.playTap()
                             HapticService.selectionClick()
                             onImportanceChange(option.value)
                         }
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                        .padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = option.emoji, fontSize = 32.sp)
+                    // Clean priority color dot on the left
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(option.color)
+                    )
 
                     Spacer(modifier = Modifier.width(16.dp))
 
@@ -1160,35 +1134,34 @@ fun Step3PriorityAndStyle(
                             text = option.title,
                             style = AppTextStyles.titleMedium.copy(
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
+                                fontSize = 16.sp,
                                 color = AppColors.textPrimary
                             )
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = option.desc,
                             style = AppTextStyles.bodySmall.copy(
-                                color = AppColors.textSecondary
-                            )
+                                color = AppColors.textSecondary,
+                                fontSize = 12.sp
+                            ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
-                    if (isSelected) {
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(option.color),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null,
-                                tint = if (option.color == accentColor) Color.Black else Color.White,
-                                modifier = Modifier.size(14.dp)
-                            )
-                        }
-                    }
+                    RadioButton(
+                        selected = isSelected,
+                        onClick = {
+                            SoundService.playTap()
+                            HapticService.selectionClick()
+                            onImportanceChange(option.value)
+                        },
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = option.color,
+                            unselectedColor = AppColors.border
+                        )
+                    )
                 }
             }
         }
@@ -1220,6 +1193,7 @@ fun Step3PriorityAndStyle(
     }
 }
 
+
 @Composable
 fun Step4Confirmation(
     title: String,
@@ -1247,72 +1221,75 @@ fun Step4Confirmation(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text(
-            text = "Looking good! 👀",
-            style = AppTextStyles.headingMedium.copy(fontWeight = FontWeight.Black)
-        )
-        Text(
-            text = "Review your habit before saving",
-            style = AppTextStyles.bodyMedium,
-            color = AppColors.textSecondary
-        )
-
+        // 1. Habit Details Card
         Card(
             colors = CardDefaults.cardColors(containerColor = AppColors.bgTertiary),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, AppColors.border, RoundedCornerShape(20.dp))
+                .border(1.dp, AppColors.border, RoundedCornerShape(16.dp))
+                .clickable { onJumpToStep(1) }
         ) {
-            Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-                // Colored left border representing priority
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
                 Box(
                     modifier = Modifier
-                        .width(6.dp)
-                        .fillMaxHeight()
-                        .background(priorityColor)
-                )
-
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(optionColors.getOrNull(selectedColorIdx)?.copy(alpha = 0.15f) ?: AppColors.bgSecondary),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // Identity row
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(optionColors.getOrNull(selectedColorIdx)?.copy(alpha = 0.15f) ?: AppColors.bgSecondary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(text = emoji, fontSize = 28.sp)
-                        }
-                        Column {
-                            Text(
-                                text = title,
-                                style = AppTextStyles.titleMedium.copy(fontWeight = FontWeight.Black)
-                            )
-                            if (!description.isNullOrBlank()) {
-                                Text(
-                                    text = description,
-                                    style = AppTextStyles.bodySmall,
-                                    color = AppColors.textSecondary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
+                    Text(text = emoji, fontSize = 24.sp)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = AppTextStyles.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    )
+                    if (description.isNotBlank()) {
+                        Text(
+                            text = description,
+                            style = AppTextStyles.bodySmall,
+                            color = AppColors.textSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
+                }
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit Step 1",
+                    tint = accentColor,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
 
-                    HorizontalDivider(color = AppColors.border.copy(alpha = 0.4f), thickness = 1.dp)
-
-                    // Schedule row
+        // 2. Schedule & Alert Settings Card
+        Card(
+            colors = CardDefaults.cardColors(containerColor = AppColors.bgTertiary),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, AppColors.border, RoundedCornerShape(16.dp))
+                .clickable { onJumpToStep(2) }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1341,121 +1318,110 @@ fun Step4Confirmation(
                             }.joinToString(", ")
                         }
                         Text(
-                            text = "Schedule: $repeatText",
-                            style = AppTextStyles.bodyMedium,
+                            text = repeatText,
+                            style = AppTextStyles.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = AppColors.textPrimary
                         )
                     }
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Step 2",
+                        tint = accentColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
 
-                    if (hasTimeSet) {
-                        HorizontalDivider(color = AppColors.border.copy(alpha = 0.4f), thickness = 1.dp)
-
-                        // Reminder row
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (reminderEnabled) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff,
-                                contentDescription = null,
-                                tint = accentColor,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            val amPmStr = if (isAM) "AM" else "PM"
-                            val timeStr = "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} $amPmStr"
-                            Text(
-                                text = "Alert at $timeStr" + if (reminderEnabled) " (Bell notification on 🔔)" else " (No Notification)",
-                                style = AppTextStyles.bodyMedium,
-                                color = AppColors.textPrimary
-                            )
-                        }
-                    }
-
+                if (hasTimeSet) {
                     HorizontalDivider(color = AppColors.border.copy(alpha = 0.4f), thickness = 1.dp)
 
-                    // Priority & Difficulty row
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Priority chip
-                        val prioLabel = when (selectedImportance) {
-                            "regular" -> "🟢 Easy"
-                            "moderate" -> "🟡 Medium"
-                            else -> "🔴 High"
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(AppColors.bgSecondary)
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = "Priority: $prioLabel",
-                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold)
-                            )
-                        }
-
-                        // Difficulty chip
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(AppColors.bgSecondary)
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = "Effort: $selectedDifficulty",
-                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.weight(1f))
-
-                        // Color swatch
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(priorityColor)
+                        Icon(
+                            imageVector = if (reminderEnabled) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff,
+                            contentDescription = null,
+                            tint = accentColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        val amPmStr = if (isAM) "AM" else "PM"
+                        val timeStr = "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} $amPmStr"
+                        Text(
+                            text = "Alert at $timeStr" + if (reminderEnabled) " (Notifications Active)" else " (Notifications Disabled)",
+                            style = AppTextStyles.bodyMedium,
+                            color = AppColors.textSecondary
                         )
                     }
                 }
             }
         }
 
-        // Edit steps shortcuts
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        // 3. Priority & Difficulty Card
+        Card(
+            colors = CardDefaults.cardColors(containerColor = AppColors.bgTertiary),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, AppColors.border, RoundedCornerShape(16.dp))
+                .clickable { onJumpToStep(3) }
         ) {
-            Text(
-                text = "Edit Identity",
-                color = accentColor,
-                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+            Row(
                 modifier = Modifier
-                    .clickable { onJumpToStep(1) }
-                    .padding(vertical = 4.dp)
-            )
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Priority Badge
+                    val prioLabel = when (selectedImportance) {
+                        "regular" -> "Easy"
+                        "moderate" -> "Medium"
+                        else -> "High"
+                    }
+                    val badgeColor = when (selectedImportance) {
+                        "regular" -> Color(0xFF4CAF50)
+                        "moderate" -> Color(0xFFFFC107)
+                        else -> accentColor
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(badgeColor.copy(alpha = 0.15f))
+                            .border(1.dp, badgeColor, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "Priority: $prioLabel",
+                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                            color = badgeColor
+                        )
+                    }
 
-            Text(
-                text = "Edit Schedule",
-                color = accentColor,
-                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
-                modifier = Modifier
-                    .clickable { onJumpToStep(2) }
-                    .padding(vertical = 4.dp)
-            )
-
-            Text(
-                text = "Edit Priority & Style",
-                color = accentColor,
-                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
-                modifier = Modifier
-                    .clickable { onJumpToStep(3) }
-                    .padding(vertical = 4.dp)
-            )
+                    // Difficulty Badge
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(AppColors.bgSecondary)
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "Effort: $selectedDifficulty",
+                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                            color = AppColors.textSecondary
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit Step 3",
+                    tint = accentColor,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
     }
 }
@@ -1556,7 +1522,7 @@ fun EmojiSearchDialog(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Text(
-                    text = "Search Emojis 🔍",
+                    text = "Search Emojis",
                     style = AppTextStyles.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = accentColor
                 )
@@ -1718,3 +1684,32 @@ fun WheelPicker(
         }
     }
 }
+
+@Composable
+fun ScheduleChip(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    accentColor: Color
+) {
+    val bgCol = if (isSelected) accentColor else AppColors.bgSecondary
+    val textCol = if (isSelected) Color.Black else AppColors.textSecondary
+    val borderCol = if (isSelected) accentColor else AppColors.border
+    
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(bgCol)
+            .border(1.dp, borderCol, RoundedCornerShape(10.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = textCol,
+            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold)
+        )
+    }
+}
+

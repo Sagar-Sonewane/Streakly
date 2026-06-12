@@ -33,20 +33,17 @@ val LocalBorder = staticCompositionLocalOf { Color(0xFF252D45) }
 
 @Composable
 fun StreaklyTheme(
-    accentColorIndex: Int = 0, // 0=orange, 1=indigo, 2=green, 3=blue, 4=gold
+    accentColorIndex: Int = 4, // 0=neon cyan, 1=electric blue, 2=purple pulse, 3=emerald green, 4=sunset orange, 5=rose pink
     themeModeIndex: Int = 0,    // 0=system, 1=light, 2=dark
     content: @Composable () -> Unit
 ) {
     val view = LocalView.current
-    val context = view.context
-    val sharedPrefs = remember(context) { context.getSharedPreferences("streakly_prefs", Context.MODE_PRIVATE) }
     
     val isSystemDark = isSystemInDarkTheme()
-    val themePref = sharedPrefs.getString("theme_mode", null)
     
-    val isDark = when (themePref) {
-        "light" -> false
-        "dark" -> true
+    val isDark = when (themeModeIndex) {
+        1 -> false
+        2 -> true
         else -> isSystemDark
     }
 
@@ -64,18 +61,8 @@ fun StreaklyTheme(
         }
     }
 
-    val accentHex = sharedPrefs.getString("accent_color", null)
-    
-    val accentInfo = remember(accentHex, accentColorIndex) {
-        if (accentHex != null) {
-            AppColors.accentOptions.find { it.hex.equals(accentHex, ignoreCase = true) }
-                ?: AppColors.accentOptions.getOrNull(accentColorIndex)
-                ?: AppColors.accentOptions[0]
-        } else {
-            val option = AppColors.accentOptions.getOrNull(accentColorIndex) ?: AppColors.accentOptions[0]
-            sharedPrefs.edit().putString("accent_color", option.hex).apply()
-            option
-        }
+    val accentInfo = remember(accentColorIndex) {
+        AppColors.accentOptions.getOrNull(accentColorIndex) ?: AppColors.accentOptions[4]
     }
 
     val activeAccent = accentInfo.primary

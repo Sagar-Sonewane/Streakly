@@ -216,6 +216,36 @@ class TaskProvider(
         }
     }
 
+    suspend fun getCompletionsForTaskList(taskId: String): List<com.example.data.models.DailyCompletion> {
+        return dailyCompletionRepository.getCompletionsForTaskList(taskId)
+    }
+
+    fun duplicateTask(task: TaskModel) {
+        viewModelScope.launch {
+            val resolvedColorIdx = when (task.importance) {
+                "regular" -> 2
+                "moderate" -> 4
+                else -> 0
+            }
+            val duplicatedTask = task.copy(
+                id = java.util.UUID.randomUUID().toString(),
+                colorIndex = resolvedColorIdx,
+                createdAt = System.currentTimeMillis(),
+                isCompleted = false
+            )
+            taskRepository.insertTask(duplicatedTask)
+            if (task.reminderEnabled && task.reminderHour != null && task.reminderMinute != null) {
+                com.example.core.utils.NotificationHelper.scheduleTaskNotification(
+                    taskId = duplicatedTask.id,
+                    taskName = duplicatedTask.title,
+                    taskEmoji = duplicatedTask.emoji,
+                    hour = task.reminderHour,
+                    minute = task.reminderMinute
+                )
+            }
+        }
+    }
+
     fun deleteAll() {
         viewModelScope.launch {
             taskRepository.deleteAllTasks()

@@ -105,6 +105,9 @@ interface DailyCompletionDao {
     @Query("SELECT * FROM daily_completions WHERE taskId = :taskId AND dateKey = :dateKey LIMIT 1")
     suspend fun getCompletionForTaskAndDate(taskId: String, dateKey: String): DailyCompletion?
 
+    @Query("SELECT * FROM daily_completions WHERE taskId = :taskId ORDER BY dateKey ASC")
+    suspend fun getCompletionsForTaskList(taskId: String): List<DailyCompletion>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdateCompletion(completion: DailyCompletion)
 

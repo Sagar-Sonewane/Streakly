@@ -40,8 +40,36 @@ class SettingsProvider(
                     _settingsState.value = settings
                     updateCachedSettings(settings.soundEnabled, settings.hapticEnabled)
                 } else {
-                    // Create default settings if not exists
-                    val defaultSettings = SettingsModel.default()
+                    // Create default settings if not exists, migrating from SharedPreferences if preferences exist
+                    val sharedPrefs = StreaklyApp.instance.getSharedPreferences("streakly_prefs", android.content.Context.MODE_PRIVATE)
+                    
+                    val existingTheme = sharedPrefs.getString("theme_mode", null)
+                    val themeIndex = when (existingTheme) {
+                        "light" -> 1
+                        "dark" -> 2
+                        else -> 0 // 0 = System Default
+                    }
+                    
+                    val existingAccentHex = sharedPrefs.getString("accent_color", null)
+                    val accentIndex = if (existingAccentHex != null) {
+                        val foundIndex = com.example.core.theme.AppColors.accentOptions.indexOfFirst { 
+                            it.hex.equals(existingAccentHex, ignoreCase = true) 
+                        }
+                        if (foundIndex != -1) foundIndex else 4 // Orange as fallback
+                    } else {
+                        4 // Orange as default (Sunset Orange is index 4 in AppColors.accentOptions)
+                    }
+
+                    // Ensure SharedPreferences stays in sync on first creation
+                    if (existingAccentHex == null) {
+                        val defaultHex = com.example.core.theme.AppColors.accentOptions[accentIndex].hex
+                        sharedPrefs.edit().putString("accent_color", defaultHex).apply()
+                    }
+
+                    val defaultSettings = SettingsModel(
+                        accentColorIndex = accentIndex,
+                        themeModeIndex = themeIndex
+                    )
                     settingsRepository.saveSettings(defaultSettings)
                     updateCachedSettings(defaultSettings.soundEnabled, defaultSettings.hapticEnabled)
                 }

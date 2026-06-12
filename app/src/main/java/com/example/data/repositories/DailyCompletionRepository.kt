@@ -39,6 +39,10 @@ class DailyCompletionRepository(private val dailyCompletionDao: DailyCompletionD
         dailyCompletionDao.deleteCompletionsForTask(taskId)
     }
 
+    suspend fun getCompletionsForTaskList(taskId: String): List<DailyCompletion> {
+        return dailyCompletionDao.getCompletionsForTaskList(taskId)
+    }
+
     suspend fun pruneOldRecords(beforeDateKey: String) {
         dailyCompletionDao.pruneCompletionsOlderThanDate(beforeDateKey)
     }

@@ -21,6 +21,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -48,6 +50,7 @@ import com.example.core.constants.Quotes
 import com.example.core.theme.AppColors
 import com.example.core.theme.AppTextStyles
 import com.example.core.utils.DateUtils
+import com.example.core.utils.CategoryUtils
 import com.example.core.utils.Responsive
 import com.example.data.models.TaskModel
 import com.example.providers.Providers
@@ -76,6 +79,7 @@ fun HomeScreen(
 
     var showAddTaskDialog by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<TaskModel?>(null) }
+    var activeDetailTask by remember { mutableStateOf<TaskModel?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -218,6 +222,7 @@ fun HomeScreen(
                     TaskItemRow(
                         task = task,
                         isLocked = isPastDate,
+                        language = language,
                         onToggleCompletion = {
                             taskProvider.toggleTaskCompletion(task)
                             if (!task.isCompleted) {
@@ -237,6 +242,30 @@ fun HomeScreen(
                             com.example.core.utils.SoundService.playDelete()
                             com.example.core.utils.HapticService.doubleClick()
                             taskProvider.deleteTask(task.id)
+                            scope.launch {
+                                snackbarHostState.showSnackbar("${task.emoji} ${task.title} deleted! 🗑️")
+                            }
+                        },
+                        onDuplicate = {
+                            com.example.core.utils.SoundService.playSuccess()
+                            com.example.core.utils.HapticService.confirm()
+                            taskProvider.duplicateTask(task)
+                            scope.launch {
+                                snackbarHostState.showSnackbar("${task.emoji} ${task.title} duplicated! 👥")
+                            }
+                        },
+                        onArchive = {
+                            com.example.core.utils.SoundService.playDelete()
+                            com.example.core.utils.HapticService.doubleClick()
+                            taskProvider.deleteTask(task.id)
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Habit archived! 📥")
+                            }
+                        },
+                        onClick = {
+                            com.example.core.utils.SoundService.playTap()
+                            com.example.core.utils.HapticService.selectionClick()
+                            activeDetailTask = task
                         }
                     )
                 }
@@ -295,6 +324,57 @@ fun HomeScreen(
                 editingTask = null
                 scope.launch {
                     snackbarHostState.showSnackbar("$emoji $title updated! ✅")
+                }
+            }
+        )
+    }
+
+    activeDetailTask?.let { task ->
+        TaskDetailsBottomSheet(
+            task = task,
+            onDismiss = { activeDetailTask = null },
+            onToggleCompletion = {
+                taskProvider.toggleTaskCompletion(task)
+                if (!task.isCompleted) {
+                    com.example.core.utils.SoundService.playSuccess()
+                    com.example.core.utils.HapticService.confirm()
+                } else {
+                    com.example.core.utils.SoundService.playDelete()
+                    com.example.core.utils.HapticService.doubleClick()
+                }
+                activeDetailTask = task.copy(isCompleted = !task.isCompleted)
+            },
+            onEdit = {
+                com.example.core.utils.SoundService.playTap()
+                com.example.core.utils.HapticService.selectionClick()
+                editingTask = task
+                activeDetailTask = null
+            },
+            onDelete = {
+                com.example.core.utils.SoundService.playDelete()
+                com.example.core.utils.HapticService.doubleClick()
+                taskProvider.deleteTask(task.id)
+                activeDetailTask = null
+                scope.launch {
+                    snackbarHostState.showSnackbar("${task.emoji} ${task.title} deleted! 🗑️")
+                }
+            },
+            onDuplicate = {
+                com.example.core.utils.SoundService.playSuccess()
+                com.example.core.utils.HapticService.confirm()
+                taskProvider.duplicateTask(task)
+                activeDetailTask = null
+                scope.launch {
+                    snackbarHostState.showSnackbar("${task.emoji} ${task.title} duplicated! 👥")
+                }
+            },
+            onArchive = {
+                com.example.core.utils.SoundService.playDelete()
+                com.example.core.utils.HapticService.doubleClick()
+                taskProvider.deleteTask(task.id)
+                activeDetailTask = null
+                scope.launch {
+                    snackbarHostState.showSnackbar("Habit archived! 📥")
                 }
             }
         )
@@ -867,13 +947,18 @@ fun ProgressSummarySection(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TaskItemRow(
     task: TaskModel,
     isLocked: Boolean = false,
+    language: String,
     onToggleCompletion: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onDuplicate: () -> Unit,
+    onArchive: () -> Unit,
+    onClick: () -> Unit
 ) {
     val isDark = AppColors.isDark
     val themeAccent = AppColors.accentColor
@@ -883,22 +968,55 @@ fun TaskItemRow(
         else -> themeAccent
     }
 
+    val taskProvider = Providers.getTask()
+    var streakCount by remember { mutableIntStateOf(0) }
+    LaunchedEffect(task.id, task.isCompleted) {
+        val list = taskProvider.getCompletionsForTaskList(task.id)
+        streakCount = calculateTaskStreak(list, task).first
+    }
+
+    val getLabel = { en: String, hi: String, mr: String ->
+        when (language) {
+            "hi" -> hi
+            "mr" -> mr
+            else -> en
+        }
+    }
+
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
-        colors = CardDefaults.cardColors(containerColor = taskColor.copy(alpha = 0.08f)),
-        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (task.isCompleted) {
+                taskColor.copy(alpha = 0.04f)
+            } else {
+                taskColor.copy(alpha = 0.08f)
+            }
+        ),
+        shape = RoundedCornerShape(20.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
             .testTag("task_item_card_${task.id}")
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = {
+                    if (!isLocked) {
+                        com.example.core.utils.SoundService.playTap()
+                        com.example.core.utils.HapticService.selectionClick()
+                        showMenu = true
+                    }
+                }
+            )
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Card left border: 4.dp in priority color
+            // Card left border: 6.dp in priority color
             Box(
                 modifier = Modifier
-                    .width(4.dp)
+                    .width(6.dp)
                     .fillMaxHeight()
                     .background(taskColor)
             )
@@ -906,7 +1024,7 @@ fun TaskItemRow(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
                     .graphicsLayer {
                         // Soft fade when completed
                         alpha = if (task.isCompleted) 0.65f else 1.0f
@@ -914,12 +1032,20 @@ fun TaskItemRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Left side: completion circle checkbox
+                val animScale by animateFloatAsState(
+                    targetValue = if (task.isCompleted) 1.1f else 1.0f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+                )
                 Box(
                     modifier = Modifier
-                        .size(26.dp)
-                        .graphicsLayer { alpha = if (isLocked) 0.5f else 1f }
+                        .size(28.dp)
+                        .graphicsLayer {
+                            scaleX = animScale
+                            scaleY = animScale
+                            alpha = if (isLocked) 0.5f else 1f
+                        }
                         .clip(CircleShape)
-                        .background(if (task.isCompleted) themeAccent else Color.Transparent)
+                        .background(if (task.isCompleted) themeAccent.copy(alpha = 0.2f) else Color.Transparent)
                         .border(
                             width = 2.dp,
                             color = if (task.isCompleted) themeAccent else taskColor,
@@ -933,13 +1059,13 @@ fun TaskItemRow(
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = "Completed",
-                            tint = Color.Black,
-                            modifier = Modifier.size(14.dp)
+                            tint = themeAccent,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(14.dp))
 
                 // Center-left: task emoji in a small soft rounded square (36.dp) with priority-based background color at 0.15f alpha
                 Box(
@@ -952,135 +1078,134 @@ fun TaskItemRow(
                     Text(text = task.emoji, fontSize = 20.sp)
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(14.dp))
 
-                // Center: task name and schedule/time chips
+                // Center: task name and details
                 Column(
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
                         text = task.title,
                         style = AppTextStyles.titleMedium.copy(
                             textDecoration = if (task.isCompleted) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
                             color = if (task.isCompleted) AppColors.textSecondary else AppColors.textPrimary,
-                            fontSize = 16.sp,
+                            fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
                         ),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    val freqLabel = when (task.frequency) {
+                        "once" -> getLabel("Once", "एक बार", "एकदा")
+                        "daily" -> getLabel("Daily", "दैनिक", "रोज")
+                        else -> {
+                            val days = task.weekDays
+                            if (days.size >= 5 && days.containsAll(listOf(1, 2, 3, 4, 5))) getLabel("Weekdays", "कार्यदिवस", "कामाचे दिवस")
+                            else if (days.size == 2 && days.containsAll(listOf(6, 7))) getLabel("Weekends", "सप्ताहांत", "शनि-रवि")
+                            else if (days.size == 7) getLabel("Daily", "दैनिक", "रोज")
+                            else getLabel("Custom Weekly", "कस्टम साप्ताहिक", "साप्ताहिक")
+                        }
+                    }
+                    val catLabel = CategoryUtils.getCategoryLabel(task.emoji, language)
+
+                    Text(
+                        text = "$freqLabel • $catLabel",
+                        style = AppTextStyles.bodySmall.copy(fontWeight = FontWeight.Medium),
+                        color = AppColors.textSecondary
+                    )
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        val scheduleLabel = when (task.frequency) {
-                            "once" -> "📅 Once"
-                            "daily" -> "📅 Daily"
-                            else -> {
-                                val days = task.weekDays
-                                if (days.size >= 5 && days.containsAll(listOf(1, 2, 3, 4, 5))) "📅 Weekdays"
-                                else if (days.size == 2 && days.containsAll(listOf(6, 7))) "📅 Weekends"
-                                else if (days.size == 7) "📅 Daily"
-                                else "📅 Weekly"
-                            }
-                        }
-
-                        // Schedule chip
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(AppColors.bgSecondary)
-                                .padding(horizontal = 8.dp, vertical = 3.dp)
-                        ) {
+                        if (!task.timeLabel.isNullOrEmpty()) {
                             Text(
-                                text = scheduleLabel,
-                                style = AppTextStyles.caption.copy(
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = AppColors.textSecondary
-                                )
+                                text = "⏰ ${task.timeLabel}",
+                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.SemiBold),
+                                color = AppColors.textSecondary
                             )
                         }
 
-                        // Time chip
-                        if (!task.timeLabel.isNullOrEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(AppColors.bgSecondary)
-                                    .padding(horizontal = 8.dp, vertical = 3.dp)
-                            ) {
-                                Text(
-                                    text = "🕐 ${task.timeLabel}",
-                                    style = AppTextStyles.caption.copy(
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = AppColors.textSecondary
-                                    )
-                                )
-                            }
+                        val badgeText = when (task.importance) {
+                            "regular" -> getLabel("Easy", "आसान", "सोपे")
+                            "moderate" -> getLabel("Mid", "मध्यम", "मध्यम")
+                            else -> getLabel("High", "उच्च", "उच्च")
                         }
+                        Text(
+                            text = "Priority: $badgeText",
+                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.SemiBold),
+                            color = taskColor
+                        )
+                    }
+
+                    if (streakCount > 0) {
+                        Text(
+                            text = "🔥 $streakCount " + getLabel("Day Streak", "दिन की निरंतरता", "दिवस सातत्य"),
+                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                            color = Color(0xFFFF5722)
+                        )
                     }
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Right side: priority badge, edit/delete controls
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    val badgeText = when (task.importance) {
-                        "regular" -> "Easy"
-                        "moderate" -> "Mid"
-                        else -> "High"
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .background(taskColor.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
-                            .border(0.5.dp, taskColor.copy(alpha = 0.35f), RoundedCornerShape(6.dp))
-                            .padding(horizontal = 8.dp, vertical = 3.dp)
-                    ) {
-                        Text(
-                            text = badgeText,
-                            style = AppTextStyles.caption.copy(
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = taskColor
-                            )
-                        )
-                    }
-
+                // Right side: Options dropdown menu
+                Box {
                     if (!isLocked) {
                         IconButton(
-                            onClick = onEdit,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .testTag("task_edit_button_${task.id}")
+                            onClick = {
+                                com.example.core.utils.SoundService.playTap()
+                                com.example.core.utils.HapticService.selectionClick()
+                                showMenu = true
+                            },
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Edit Task",
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "Options",
                                 tint = AppColors.textSecondary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
 
-                        IconButton(
-                            onClick = onDelete,
-                            modifier = Modifier
-                                .size(32.dp)
-                                .testTag("task_delete_button_${task.id}")
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier.background(AppColors.bgSecondary)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete Task",
-                                tint = AppColors.danger.copy(alpha = 0.7f),
-                                modifier = Modifier.size(16.dp)
+                            DropdownMenuItem(
+                                text = { Text(getLabel("Edit Task", "संपादित करें", "संपादन करा"), color = AppColors.textPrimary) },
+                                onClick = {
+                                    showMenu = false
+                                    onEdit()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = "Edit", tint = AppColors.textSecondary) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(getLabel("Duplicate", "डुप्लिकेट करें", "नक्कल करा"), color = AppColors.textPrimary) },
+                                onClick = {
+                                    showMenu = false
+                                    onDuplicate()
+                                },
+                                leadingIcon = { Icon(Icons.Default.ContentCopy, contentDescription = "Duplicate", tint = AppColors.textSecondary) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(getLabel("Archive", "आर्काइव करें", "संग्रह करा"), color = AppColors.textPrimary) },
+                                onClick = {
+                                    showMenu = false
+                                    onArchive()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Archive, contentDescription = "Archive", tint = AppColors.textSecondary) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(getLabel("Delete", "हटाएं", "हटवा"), color = AppColors.danger) },
+                                onClick = {
+                                    showMenu = false
+                                    onDelete()
+                                },
+                                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = "Delete", tint = AppColors.danger) }
                             )
                         }
                     }

@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "settings")
 data class SettingsModel(
     @PrimaryKey val id: Int = 1, // Single entry row
-    val accentColorIndex: Int = 0, // 0=orange, 1=blue, 2=purple, 3=green, 4=amber, 5=red
+    val accentColorIndex: Int = 4, // 0=neon cyan, 1=electric blue, 2=purple pulse, 3=emerald green, 4=sunset orange, 5=rose pink
     val language: String = "en", // "en", "hi", "mr"
     val notificationsEnabled: Boolean = true,
     val reminderHour: Int = 7,

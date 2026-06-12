@@ -31,34 +31,34 @@ object AppColors {
 
 
     // Accents
-    val accentEmberOrange = Color(0xFFFF5722)
-    val accentRoyalGold = Color(0xFFF9A825)
-    val accentFlamingoPink = Color(0xFFF06292)
-    val accentElectricPurple = Color(0xFF7C4DFF)
     val accentNeonCyan = Color(0xFF00BCD4)
-    val accentNeonGreen = Color(0xFF00E676)
+    val accentElectricBlue = Color(0xFF2979FF)
+    val accentPurplePulse = Color(0xFF7C4DFF)
+    val accentEmeraldGreen = Color(0xFF00E676)
+    val accentSunsetOrange = Color(0xFFFF5722)
+    val accentRosePink = Color(0xFFF06292)
 
-    val accentEmberOrangeLighter = Color(0xFFFF7043)
-    val accentRoyalGoldLighter = Color(0xFFFFCA28)
-    val accentFlamingoPinkLighter = Color(0xFFF48FB1)
-    val accentElectricPurpleLighter = Color(0xFF9E6FFF)
     val accentNeonCyanLighter = Color(0xFF26C6DA)
-    val accentNeonGreenLighter = Color(0xFF69F0AE)
+    val accentElectricBlueLighter = Color(0xFF82B1FF)
+    val accentPurplePulseLighter = Color(0xFF9E6FFF)
+    val accentEmeraldGreenLighter = Color(0xFF69F0AE)
+    val accentSunsetOrangeLighter = Color(0xFFFF7043)
+    val accentRosePinkLighter = Color(0xFFF48FB1)
 
     val accentOptions = listOf(
-        AccentColorInfo("Ember Orange", "#FF5722", accentEmberOrange, accentEmberOrangeLighter, "🔥"),
-        AccentColorInfo("Royal Gold", "#F9A825", accentRoyalGold, accentRoyalGoldLighter, "👑"),
-        AccentColorInfo("Flamingo Pink", "#F06292", accentFlamingoPink, accentFlamingoPinkLighter, "💗"),
-        AccentColorInfo("Electric Purple", "#7C4DFF", accentElectricPurple, accentElectricPurpleLighter, "⚡"),
-        AccentColorInfo("Neon Cyan", "#00BCD4", accentNeonCyan, accentNeonCyanLighter, "🌊"),
-        AccentColorInfo("Neon Green", "#00E676", accentNeonGreen, accentNeonGreenLighter, "🍀")
+        AccentColorInfo("Neon Cyan", "#00BCD4", accentNeonCyan, accentNeonCyanLighter, ""),
+        AccentColorInfo("Electric Blue", "#2979FF", accentElectricBlue, accentElectricBlueLighter, ""),
+        AccentColorInfo("Purple Pulse", "#7C4DFF", accentPurplePulse, accentPurplePulseLighter, ""),
+        AccentColorInfo("Emerald Green", "#00E676", accentEmeraldGreen, accentEmeraldGreenLighter, ""),
+        AccentColorInfo("Sunset Orange", "#FF5722", accentSunsetOrange, accentSunsetOrangeLighter, ""),
+        AccentColorInfo("Rose Pink", "#F06292", accentRosePink, accentRosePinkLighter, "")
     )
 
     val red = Color(0xFFFF3D71)
     val blue = Color(0xFF1565C0)
     val purple = Color(0xFF5C6BC0)
-    val accentAmber = accentRoyalGold
-    val accentOrange = accentEmberOrange
+    val accentAmber = accentElectricBlue
+    val accentOrange = accentSunsetOrange
     val electricViolet = Color(0xFF6C63FF)
     val cyberTeal = Color(0xFF00D4AA)
     val neonGreen = Color(0xFF00C853)
@@ -67,21 +67,21 @@ object AppColors {
 
     // Accent options by index
     val accentColorOptions = listOf(
-        accentEmberOrange,      // Index 0
-        accentRoyalGold,        // Index 1
-        accentFlamingoPink,     // Index 2
-        accentElectricPurple,   // Index 3
-        accentNeonCyan,         // Index 4
-        accentNeonGreen         // Index 5
+        accentNeonCyan,         // Index 0
+        accentElectricBlue,     // Index 1
+        accentPurplePulse,      // Index 2
+        accentEmeraldGreen,     // Index 3
+        accentSunsetOrange,     // Index 4
+        accentRosePink          // Index 5
     )
 
     val accentNames = listOf(
-        "Ember Orange",
-        "Royal Gold",
-        "Flamingo Pink",
-        "Electric Purple",
         "Neon Cyan",
-        "Neon Green"
+        "Electric Blue",
+        "Purple Pulse",
+        "Emerald Green",
+        "Sunset Orange",
+        "Rose Pink"
     )
 
     val accentColor: Color @Composable get() = LocalAccentColor.current
@@ -144,12 +144,12 @@ object AppColors {
     fun getLegibleColor(color: Color): Color {
         if (isDark) return color
         return when (color) {
-            accentEmberOrange -> Color(0xFFD84315)
-            accentRoyalGold -> Color(0xFFE65100)
-            accentFlamingoPink -> Color(0xFFC2185B)
-            accentElectricPurple -> Color(0xFF4527A0)
             accentNeonCyan -> Color(0xFF006064)
-            accentNeonGreen -> Color(0xFF1B5E20)
+            accentElectricBlue -> Color(0xFF0D47A1)
+            accentPurplePulse -> Color(0xFF4527A0)
+            accentEmeraldGreen -> Color(0xFF1B5E20)
+            accentSunsetOrange -> Color(0xFFD84315)
+            accentRosePink -> Color(0xFFC2185B)
             else -> color
         }
     }
