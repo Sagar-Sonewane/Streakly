@@ -1,6 +1,3 @@
-<div align="center">
-  <img src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" alt="Streakly Banner" width="100%" style="border-radius: 12px; margin-bottom: 20px;"/>
-
   # 🎯 STREAKLY
 
   ### **A professional dark-themed daily streak & discipline tracking app.**
