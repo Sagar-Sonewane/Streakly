@@ -471,7 +471,7 @@ SOFTWARE.
 *   **GitHub:** [@Sagar-Sonewane](https://github.com/Sagar-Sonewane)
 *   **LinkedIn:** [Sagar Sonewane](https://www.linkedin.com/in/sagar-sonewane-/)
 *   **Portfolio:** [Sagar Sonewane Portfolio](https://github.com/Sagar-Sonewane)
-*   **Email:** [sagar.sonewane@example.com](mailto:sagar.sonewane@example.com)
+*   **Email:** [sagarsonewane2511@gmail.com](mailto:sagarsonewane2511@gmail.com)
 
 ---
 
