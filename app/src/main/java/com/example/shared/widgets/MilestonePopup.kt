@@ -21,6 +21,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import com.example.core.utils.CategoryUtils
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -95,11 +97,13 @@ fun MilestonePopup(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(20.dp)
                 ) {
-                    // Pulsating emoji container
-                    Text(
-                        text = details.emoji,
-                        fontSize = 72.sp,
+                    // Pulsating vector icon container
+                    Icon(
+                        imageVector = CategoryUtils.getIconForEmoji(details.emoji),
+                        contentDescription = "Milestone Icon",
+                        tint = accentColor,
                         modifier = Modifier
+                            .size(72.dp)
                             .scale(pulseScale)
                             .padding(bottom = 12.dp)
                     )
@@ -178,12 +182,12 @@ private fun rememberMilestoneDetails(milestone: Int, lang: String): MilestoneInf
                 else -> "👑"
             }
             val title = when(milestone) {
-                3 -> "३-दिन की चिंगारी 🔥"
-                7 -> "एक सप्ताह के योद्धा ⚔️"
-                10 -> "लपटों के उस्ताद ☄️"
-                20 -> "निरंतरता के राजा 🏆"
-                50 -> "असाधारण स्ट्रीक 💎"
-                else -> "महान सम्राट 👑"
+                3 -> "३-दिन की चिंगारी"
+                7 -> "एक सप्ताह के योद्धा"
+                10 -> "लपटों के उस्ताद"
+                20 -> "निरंतरता के राजा"
+                50 -> "असाधारण स्ट्रीक"
+                else -> "महान सम्राट"
             }
             val days = "$milestone दिनों की स्ट्रीक पूरी!"
             val desc = when(milestone) {
@@ -194,7 +198,7 @@ private fun rememberMilestoneDetails(milestone: Int, lang: String): MilestoneInf
                 50 -> "उत्कृष्टता का नया स्तर! आपके हौसले चट्टान की तरह हैं!"
                 else -> "१०० दिन की बेमिसाल यात्रा! आप महानता की मिसाल हैं!"
             }
-            MilestoneInfo(emoji, title, days, desc, "बैज प्राप्त करें 🛡️")
+            MilestoneInfo(emoji, title, days, desc, "बैज प्राप्त करें")
         }
         "mr" -> {
             val emoji = when(milestone) {
@@ -206,12 +210,12 @@ private fun rememberMilestoneDetails(milestone: Int, lang: String): MilestoneInf
                 else -> "👑"
             }
             val title = when(milestone) {
-                3 -> "३-दिवसांची ठिणगी 🔥"
-                7 -> "एक आठवड्याचा योद्धा ⚔️"
-                10 -> "ज्वालांचा स्वामी ☄️"
-                20 -> "सातत्याचा विजेता 🏆"
-                50 -> "उत्कृष्ट स्ट्रीक 💎"
-                else -> "महान राजा 👑"
+                3 -> "३-दिवसांची ठिणगी"
+                7 -> "एक आठवड्याचा योद्धा"
+                10 -> "ज्वालांचा स्वामी"
+                20 -> "सातत्याचा विजेता"
+                50 -> "उत्कृष्ट स्ट्रीक"
+                else -> "महान राजा"
             }
             val days = "$milestone दिवसांची अखंड स्ट्रीक!"
             val desc = when(milestone) {
@@ -222,7 +226,7 @@ private fun rememberMilestoneDetails(milestone: Int, lang: String): MilestoneInf
                 50 -> "अतुलनीय अनुशासन! तुम्ही नवीन यशाचे शिखर गाठले आहे!"
                 else -> "१०० दिवस सलग! तुमची ही यात्रा ऐतिहासिक आणि प्रेरणादायी आहे!"
             }
-            MilestoneInfo(emoji, title, days, desc, "बॅज मिळवा 🛡️")
+            MilestoneInfo(emoji, title, days, desc, "बॅज मिळवा")
         }
         else -> {
             val emoji = when(milestone) {
@@ -234,12 +238,12 @@ private fun rememberMilestoneDetails(milestone: Int, lang: String): MilestoneInf
                 else -> "👑"
             }
             val title = when(milestone) {
-                3 -> "3-Day Spark 🔥"
-                7 -> "One Week Warrior ⚔️"
-                10 -> "Flame Master ☄️"
-                20 -> "Consistency Champion 🏆"
-                50 -> "Elite Streak 💎"
-                else -> "Legendary Lord 👑"
+                3 -> "3-Day Spark"
+                7 -> "One Week Warrior"
+                10 -> "Flame Master"
+                20 -> "Consistency Champion"
+                50 -> "Elite Streak"
+                else -> "Legendary Lord"
             }
             val days = "$milestone DAYS STREAK COMPLETED!"
             val desc = when(milestone) {
@@ -250,7 +254,7 @@ private fun rememberMilestoneDetails(milestone: Int, lang: String): MilestoneInf
                 50 -> "Elite Streak badge earned. High tier discipline, masterclass!"
                 else -> "100-Day Legendary stream unlocked! Absolutely historic achievement!"
             }
-            MilestoneInfo(emoji, title, days, desc, "Claim Badge 🛡️")
+            MilestoneInfo(emoji, title, days, desc, "Claim Badge")
         }
     }
 }

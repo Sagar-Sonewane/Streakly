@@ -5,7 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
-import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -243,7 +243,7 @@ fun HomeScreen(
                             com.example.core.utils.HapticService.doubleClick()
                             taskProvider.deleteTask(task.id)
                             scope.launch {
-                                snackbarHostState.showSnackbar("${task.emoji} ${task.title} deleted! 🗑️")
+                                snackbarHostState.showSnackbar("${task.title} deleted")
                             }
                         },
                         onDuplicate = {
@@ -251,7 +251,7 @@ fun HomeScreen(
                             com.example.core.utils.HapticService.confirm()
                             taskProvider.duplicateTask(task)
                             scope.launch {
-                                snackbarHostState.showSnackbar("${task.emoji} ${task.title} duplicated! 👥")
+                                snackbarHostState.showSnackbar("${task.title} duplicated")
                             }
                         },
                         onArchive = {
@@ -259,7 +259,7 @@ fun HomeScreen(
                             com.example.core.utils.HapticService.doubleClick()
                             taskProvider.deleteTask(task.id)
                             scope.launch {
-                                snackbarHostState.showSnackbar("Habit archived! 📥")
+                                snackbarHostState.showSnackbar("Habit archived")
                             }
                         },
                         onClick = {
@@ -294,7 +294,7 @@ fun HomeScreen(
                 )
                 showAddTaskDialog = false
                 scope.launch {
-                    snackbarHostState.showSnackbar("$emoji $title added! 🔥")
+                    snackbarHostState.showSnackbar("$title added")
                 }
             }
         )
@@ -323,7 +323,7 @@ fun HomeScreen(
                 )
                 editingTask = null
                 scope.launch {
-                    snackbarHostState.showSnackbar("$emoji $title updated! ✅")
+                    snackbarHostState.showSnackbar("$title updated")
                 }
             }
         )
@@ -356,7 +356,7 @@ fun HomeScreen(
                 taskProvider.deleteTask(task.id)
                 activeDetailTask = null
                 scope.launch {
-                    snackbarHostState.showSnackbar("${task.emoji} ${task.title} deleted! 🗑️")
+                    snackbarHostState.showSnackbar("${task.title} deleted")
                 }
             },
             onDuplicate = {
@@ -365,7 +365,7 @@ fun HomeScreen(
                 taskProvider.duplicateTask(task)
                 activeDetailTask = null
                 scope.launch {
-                    snackbarHostState.showSnackbar("${task.emoji} ${task.title} duplicated! 👥")
+                    snackbarHostState.showSnackbar("${task.title} duplicated")
                 }
             },
             onArchive = {
@@ -374,7 +374,7 @@ fun HomeScreen(
                 taskProvider.deleteTask(task.id)
                 activeDetailTask = null
                 scope.launch {
-                    snackbarHostState.showSnackbar("Habit archived! 📥")
+                    snackbarHostState.showSnackbar("Habit archived")
                 }
             }
         )
@@ -1067,7 +1067,7 @@ fun TaskItemRow(
 
                 Spacer(modifier = Modifier.width(14.dp))
 
-                // Center-left: task emoji in a small soft rounded square (36.dp) with priority-based background color at 0.15f alpha
+                // Center-left: task category rounded icon mapping instead of emoji text
                 Box(
                     modifier = Modifier
                         .size(36.dp)
@@ -1075,7 +1075,12 @@ fun TaskItemRow(
                         .background(taskColor.copy(alpha = 0.15f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = task.emoji, fontSize = 20.sp)
+                    Icon(
+                        imageVector = CategoryUtils.getIconForEmoji(task.emoji),
+                        contentDescription = "Habit Icon",
+                        tint = taskColor,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(14.dp))
@@ -1121,11 +1126,22 @@ fun TaskItemRow(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         if (!task.timeLabel.isNullOrEmpty()) {
-                            Text(
-                                text = "⏰ ${task.timeLabel}",
-                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.SemiBold),
-                                color = AppColors.textSecondary
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Schedule,
+                                    contentDescription = "Time",
+                                    tint = AppColors.textSecondary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Text(
+                                    text = task.timeLabel,
+                                    style = AppTextStyles.caption.copy(fontWeight = FontWeight.SemiBold),
+                                    color = AppColors.textSecondary
+                                )
+                            }
                         }
 
                         val badgeText = when (task.importance) {
@@ -1141,11 +1157,22 @@ fun TaskItemRow(
                     }
 
                     if (streakCount > 0) {
-                        Text(
-                            text = "🔥 $streakCount " + getLabel("Day Streak", "दिन की निरंतरता", "दिवस सातत्य"),
-                            style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
-                            color = Color(0xFFFF5722)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.LocalFireDepartment,
+                                contentDescription = "Streak",
+                                tint = Color(0xFFFF5722),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "$streakCount " + getLabel("Day Streak", "दिन की निरंतरता", "दिवस सातत्य"),
+                                style = AppTextStyles.caption.copy(fontWeight = FontWeight.Bold),
+                                color = Color(0xFFFF5722)
+                            )
+                        }
                     }
                 }
 

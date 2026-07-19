@@ -52,6 +52,7 @@ import com.example.data.models.TaskModel
 import com.example.core.utils.SoundService
 import com.example.core.utils.HapticService
 import com.example.core.utils.NotificationHelper
+import com.example.core.utils.CategoryUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -480,7 +481,7 @@ fun TaskEditBottomSheet(
                     .navigationBarsPadding()
             ) {
                 Text(
-                    text = "Choose Emoji",
+                    text = "Choose Icon",
                     style = AppTextStyles.titleMedium.copy(fontWeight = FontWeight.Bold, color = accentColor),
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -500,19 +501,30 @@ fun TaskEditBottomSheet(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             rowEmojis.forEach { singleEmoji ->
+                                val isSelected = emoji == singleEmoji
                                 Box(
                                     modifier = Modifier
                                         .weight(1f)
                                         .aspectRatio(1f)
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(AppColors.bgTertiary)
+                                        .background(if (isSelected) accentColor.copy(alpha = 0.15f) else AppColors.bgTertiary)
+                                        .border(
+                                            width = if (isSelected) 2.dp else 0.dp,
+                                            color = if (isSelected) accentColor else Color.Transparent,
+                                            shape = RoundedCornerShape(12.dp)
+                                        )
                                         .clickable {
                                             showEmojiBottomSheet = false
                                             onEmojiSelectedWithAnimation(singleEmoji)
                                         },
                                     contentAlignment = Alignment.Center
                                 ) {
-                                    Text(text = singleEmoji, fontSize = 24.sp)
+                                    Icon(
+                                        imageVector = CategoryUtils.getIconForEmoji(singleEmoji),
+                                        contentDescription = "Icon Choice",
+                                        tint = if (isSelected) accentColor else AppColors.textPrimary,
+                                        modifier = Modifier.size(24.dp)
+                                    )
                                 }
                             }
                             
@@ -686,7 +698,12 @@ fun Step1Identity(
                     .clickable { onEmojiButtonTap() },
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = selectedEmoji, fontSize = 22.sp)
+                Icon(
+                    imageVector = CategoryUtils.getIconForEmoji(selectedEmoji),
+                    contentDescription = "Selected Icon",
+                    tint = LocalAccentColor.current,
+                    modifier = Modifier.size(24.dp)
+                )
             }
 
             Column(modifier = Modifier.weight(1f)) {
@@ -1076,9 +1093,9 @@ fun Step3PriorityAndStyle(
     }
 
     val motivationalText = when (selectedImportance) {
-        "regular" -> "Every habit starts small 🌱"
-        "moderate" -> "Consistency is the key 🔑"
-        else -> "This one matters most 🔥"
+        "regular" -> "Every habit starts small"
+        "moderate" -> "Consistency is the key"
+        else -> "This one matters most"
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -1244,7 +1261,12 @@ fun Step4Confirmation(
                         .background(optionColors.getOrNull(selectedColorIdx)?.copy(alpha = 0.15f) ?: AppColors.bgSecondary),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(text = emoji, fontSize = 24.sp)
+                    Icon(
+                        imageVector = CategoryUtils.getIconForEmoji(emoji),
+                        contentDescription = "Identity Icon",
+                        tint = optionColors.getOrNull(selectedColorIdx) ?: accentColor,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -1522,7 +1544,7 @@ fun EmojiSearchDialog(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 Text(
-                    text = "Search Emojis",
+                    text = "Search Icons",
                     style = AppTextStyles.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = accentColor
                 )
@@ -1543,7 +1565,7 @@ fun EmojiSearchDialog(
                 Box(modifier = Modifier.weight(1f)) {
                     if (filtered.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(text = "No emojis found", color = AppColors.textSecondary)
+                            Text(text = "No icons found", color = AppColors.textSecondary)
                         }
                     } else {
                         // Simple vertical grid using Columns/Rows
@@ -1569,7 +1591,12 @@ fun EmojiSearchDialog(
                                                 .clickable { onEmojiSelected(singleEmoji) },
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Text(text = singleEmoji, fontSize = 22.sp)
+                                            Icon(
+                                                imageVector = CategoryUtils.getIconForEmoji(singleEmoji),
+                                                contentDescription = "Icon Choice",
+                                                tint = AppColors.textPrimary,
+                                                modifier = Modifier.size(24.dp)
+                                            )
                                         }
                                     }
                                     // Empty placeholders to align columns if last row is incomplete

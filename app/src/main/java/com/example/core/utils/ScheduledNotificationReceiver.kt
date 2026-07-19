@@ -32,7 +32,7 @@ class ScheduledNotificationReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = if (isTest) "Streakly Test Notification" else "Stay on Track! 🔥"
+        val title = if (isTest) "Streakly Test Notification" else "Stay on Track!"
         val message = if (isTest) "Your notification system is working perfectly." else "Time to log your habits and keep your streaks alive!"
 
         val soundUri = android.net.Uri.parse("android.resource://${context.packageName}/${com.example.R.raw.notification}")

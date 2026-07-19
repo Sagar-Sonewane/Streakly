@@ -46,6 +46,7 @@ import com.example.core.theme.AppColors
 import com.example.core.theme.AppTextStyles
 import com.example.core.theme.LocalAccentColor
 import com.example.core.utils.HapticService
+import com.example.core.utils.CategoryUtils
 import kotlinx.coroutines.delay
 import java.io.File
 import java.io.FileOutputStream
@@ -76,12 +77,12 @@ fun MilestoneCelebrationScreen(
     // 1. Dynamic configs based on milestone days
     val details = remember(milestone) {
         when (milestone) {
-            3 -> MilestoneInfo("SPARK UNLOCKED 🔥", "3", "3 Day Streak Achieved", "🔥", Color(0xFFFF5722))
-            7 -> MilestoneInfo("WARRIOR UNLOCKED ⚔️", "7", "7 Day Streak Achieved", "⚔️", Color(0xFFFF3D71))
-            14 -> MilestoneInfo("CHAMPION UNLOCKED 🏆", "14", "14 Day Streak Achieved", "🏆", Color(0xFF5C6BC0))
-            30 -> MilestoneInfo("LEGEND UNLOCKED 👑", "30", "30 Day Streak Achieved", "👑", Color(0xFFF9A825))
-            100 -> MilestoneInfo("IMMORTAL UNLOCKED 💎", "100", "100 Day Streak Achieved", "💎", Color(0xFF00D4AA))
-            else -> MilestoneInfo("MILESTONE ACHIEVED! 🔥", "$milestone", "$milestone Day Streak Achieved", "🔥", accentColor)
+            3 -> MilestoneInfo("SPARK UNLOCKED", "3", "3 Day Streak Achieved", "🔥", Color(0xFFFF5722))
+            7 -> MilestoneInfo("WARRIOR UNLOCKED", "7", "7 Day Streak Achieved", "⚔️", Color(0xFFFF3D71))
+            14 -> MilestoneInfo("CHAMPION UNLOCKED", "14", "14 Day Streak Achieved", "🏆", Color(0xFF5C6BC0))
+            30 -> MilestoneInfo("LEGEND UNLOCKED", "30", "30 Day Streak Achieved", "👑", Color(0xFFF9A825))
+            100 -> MilestoneInfo("IMMORTAL UNLOCKED", "100", "100 Day Streak Achieved", "💎", Color(0xFF00D4AA))
+            else -> MilestoneInfo("MILESTONE ACHIEVED!", "$milestone", "$milestone Day Streak Achieved", "🔥", accentColor)
         }
     }
     
@@ -299,9 +300,11 @@ fun MilestoneCelebrationScreen(
                             .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = details.emoji,
-                            fontSize = 38.sp
+                        Icon(
+                            imageVector = CategoryUtils.getIconForEmoji(details.emoji),
+                            contentDescription = "Milestone Icon",
+                            tint = details.tierColor,
+                            modifier = Modifier.size(44.dp)
                         )
                     }
                 }
@@ -458,7 +461,7 @@ fun MilestoneCelebrationScreen(
                         contentPadding = PaddingValues(vertical = 14.dp)
                     ) {
                         Text(
-                            text = "Continue 🔥",
+                            text = "Continue",
                             style = AppTextStyles.actionButton.copy(color = Color.Black, fontSize = 16.sp)
                         )
                     }

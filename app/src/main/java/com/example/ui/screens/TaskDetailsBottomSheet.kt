@@ -115,7 +115,12 @@ fun TaskDetailsBottomSheet(
                             .background(accentColor.copy(alpha = 0.15f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(text = task.emoji, fontSize = 36.sp)
+                        Icon(
+                            imageVector = CategoryUtils.getIconForEmoji(task.emoji),
+                            contentDescription = "Habit Icon",
+                            tint = accentColor,
+                            modifier = Modifier.size(36.dp)
+                        )
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))

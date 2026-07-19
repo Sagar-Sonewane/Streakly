@@ -47,6 +47,8 @@ import com.example.core.theme.AppColors
 import com.example.core.theme.AppTextStyles
 import com.example.providers.Providers
 import com.example.shared.widgets.TimePickerSheet
+import com.example.core.utils.CategoryUtils
+import androidx.compose.material.icons.rounded.WavingHand
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
@@ -153,7 +155,7 @@ fun OnboardingSplashScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Build. Track. Win. 🔥",
+                        text = "Build. Track. Win.",
                         style = AppTextStyles.bodyMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = AppColors.textSecondary
@@ -345,9 +347,11 @@ fun OnboardingWelcomeSlides(
                             .background(accentColor.copy(alpha = 0.12f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = emoji,
-                            fontSize = 52.sp
+                        Icon(
+                            imageVector = CategoryUtils.getIconForEmoji(emoji),
+                            contentDescription = "Feature Icon",
+                            tint = accentColor,
+                            modifier = Modifier.size(56.dp)
                         )
                     }
                 }
@@ -472,7 +476,12 @@ fun OnboardingUsernameSetup(
             Box(
                 modifier = Modifier.graphicsLayer { rotationZ = rotation }
             ) {
-                Text("👋", fontSize = 64.sp)
+                Icon(
+                    imageVector = Icons.Rounded.WavingHand,
+                    contentDescription = "Welcome Icon",
+                    tint = accentColor,
+                    modifier = Modifier.size(64.dp)
+                )
             }
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -638,7 +647,7 @@ fun OnboardingNotificationPermission(
                     contentPadding = PaddingValues(vertical = 14.dp)
                 ) {
                     Text(
-                        text = getLabel("Allow Notifications 🔔", "सूचनाएं अनुमति दें 🔔", "सूचनांना परवानगी द्या 🔔"),
+                        text = getLabel("Allow Notifications", "सूचनाएं अनुमति दें", "सूचनांना परवानगी द्या"),
                         style = AppTextStyles.actionButton.copy(color = Color.Black, fontSize = 16.sp)
                     )
                 }
@@ -938,7 +947,12 @@ fun OnboardingSetAlertTime(
                                     )
                                 }
                             } else {
-                                Text(text = preset.emoji, fontSize = 22.sp)
+                                Icon(
+                                    imageVector = CategoryUtils.getIconForEmoji(preset.emoji),
+                                    contentDescription = preset.title,
+                                    tint = AppColors.textPrimary,
+                                    modifier = Modifier.size(24.dp)
+                                )
                             }
                         }
                         
@@ -1008,12 +1022,12 @@ fun OnboardingFirstHabitSetup(
     val focusRequester = remember { FocusRequester() }
     
     val presets = listOf(
-        Pair("🏋️ Gym", getLabel("Gym", "जिम", "व्यायामशाळा")),
-        Pair("📚 Read", getLabel("Read", "पढ़ें", "वाचन")),
-        Pair("🧘 Meditate", getLabel("Meditate", "ध्यान", "ध्यान")),
-        Pair("💧 Water", getLabel("Water", "पानी", "पाणी")),
-        Pair("🚶 Walk", getLabel("Walk", "टहलें", "चालणे")),
-        Pair("🍎 Eat Healthy", getLabel("Eat Healthy", "स्वस्थ खाएं", "निरोगी आहार"))
+        Triple("🏋️", "Gym", getLabel("Gym", "जिम", "व्यायामशाळा")),
+        Triple("📚", "Read", getLabel("Read", "पढ़ें", "वाचन")),
+        Triple("🧘", "Meditate", getLabel("Meditate", "ध्यान", "ध्यान")),
+        Triple("💧", "Water", getLabel("Water", "पानी", "पाणी")),
+        Triple("🚶", "Walk", getLabel("Walk", "टहलें", "चालणे")),
+        Triple("🍎", "Eat Healthy", getLabel("Eat Healthy", "स्वस्थ खाएं", "निरोगी आहार"))
     )
     
     val onPresetClick: (String) -> Unit = { cleanName ->
@@ -1141,7 +1155,7 @@ fun OnboardingFirstHabitSetup(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    presets.take(3).forEach { (display, cleanName) ->
+                    presets.take(3).forEach { (emoji, cleanName, localizedLabel) ->
                         Box(
                             modifier = Modifier
                                 .weight(1f)
@@ -1152,13 +1166,24 @@ fun OnboardingFirstHabitSetup(
                                 .padding(vertical = 10.dp, horizontal = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = display,
-                                style = AppTextStyles.caption.copy(
-                                    fontSize = 12.sp,
-                                    color = AppColors.textPrimary
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = CategoryUtils.getIconForEmoji(emoji),
+                                    contentDescription = cleanName,
+                                    tint = accentColor,
+                                    modifier = Modifier.size(16.dp)
                                 )
-                            )
+                                Text(
+                                    text = localizedLabel,
+                                    style = AppTextStyles.caption.copy(
+                                        fontSize = 12.sp,
+                                        color = AppColors.textPrimary
+                                    )
+                                )
+                            }
                         }
                     }
                 }
@@ -1166,7 +1191,7 @@ fun OnboardingFirstHabitSetup(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    presets.takeLast(3).forEach { (display, cleanName) ->
+                    presets.takeLast(3).forEach { (emoji, cleanName, localizedLabel) ->
                         Box(
                             modifier = Modifier
                                 .weight(1f)
@@ -1177,13 +1202,24 @@ fun OnboardingFirstHabitSetup(
                                 .padding(vertical = 10.dp, horizontal = 4.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = display,
-                                style = AppTextStyles.caption.copy(
-                                    fontSize = 12.sp,
-                                    color = AppColors.textPrimary
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = CategoryUtils.getIconForEmoji(emoji),
+                                    contentDescription = cleanName,
+                                    tint = accentColor,
+                                    modifier = Modifier.size(16.dp)
                                 )
-                            )
+                                Text(
+                                    text = localizedLabel,
+                                    style = AppTextStyles.caption.copy(
+                                        fontSize = 12.sp,
+                                        color = AppColors.textPrimary
+                                    )
+                                )
+                            }
                         }
                     }
                 }
